@@ -1,6 +1,6 @@
 ---
 title: "Class Reference"
-author: "Student name"
+author: "David Andrews"
 output:
   html_document:
     theme: cerulean
@@ -17,4 +17,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-Consider this my personal guide to the commands and functions you will learn. In general, when you come across an R command or function that you want to remember, put it in here along with a description of what it does and when you'd use it.
+Consider this Dave's personal guide to the commands and functions you will learn. In general, when you come across an R command or function that you want to remember, put it in here along with a description of what it does and when you'd use it.
+
+To set the working directory, click on more, then set as working directory. Command as follows: setwd("~/Documents/GitHub/data_journalism_2022_spring")
