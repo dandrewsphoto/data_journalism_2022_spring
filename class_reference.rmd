@@ -20,3 +20,75 @@ knitr::opts_chunk$set(echo = TRUE)
 Consider this Dave's personal guide to the commands and functions you will learn. In general, when you come across an R command or function that you want to remember, put it in here along with a description of what it does and when you'd use it.
 
 To set the working directory, click on more, then set as working directory. Command as follows: setwd("~/Documents/GitHub/data_journalism_2022_spring")
+
+To use the tidyverse, you need to "run" the library tidyverse. Need to do that in every notebook.
+
+Can highlight a line and choose RUN in the tool bar above the notebook.
+
+Run code like this:
+
+```{r}
+library(tidyverse)
+```
+
+click the Green arrow at the end of the line to run that block. "Run all the code in this current block."
+
+```{r}
+ppp_maryland_loans <- read_rds("pre_lab_01.rds")
+```
+
+^ Reads the data of the other prelab document in the folder, allows you to read it.
+
+Gimpse gives you a look at a dataframe.
+
+```{r}
+head(ppp_maryland_loans)
+```
+
+--> shows you the top 6 rows of a document.
+
+Console is like an exhaust pipe. The Console is the computer, the top is the Monitor. You can decide what you can see and hide.
+
+When you're viewing the PPP Loans page, you can sort by each category. 
+
+
+```{r}
+ppp_maryland_loans %>%
+  group_by(project_county_name) %>%
+  summarise(
+    count_loans = n()
+  )
+```
+
+This code is saying --> Start with PPP loans --> "AND THEN" (%>%), group by each county in Maryland. "AND THEN" summarize by counting up the number of loans in each county bucket.
+
+"Give me the N of that", that means "count up the number of things."
+
+
+```{r}
+ppp_maryland_loans %>%
+  group_by(project_county_name) %>%
+  summarise(
+    count_loans = n()
+  ) %>%
+  arrange(desc(count_loans))
+```
+
+--> ^ Same code as before, but once you've counted them up, arrange them in descending order from highest to lowest."
+
+
+Summarizing data is one of the best thing to learn what's wrong with it. If the highest race is "unnamed" for every county application, we can't include race in a story about PPP loans. 
+
+```{r}
+ppp_maryland_loans %>%
+  group_by(project_county_name) %>%
+  summarise(
+    count_loans = n(),
+    total_loans_amount = sum(amount),
+    mean_loan_amount = mean(amount),
+    median_loan_amount = median(amount)
+  ) %>%
+  arrange(desc(mean_loan_amount))
+```
+
+^^ Same, but then we're going to sum the totals.
