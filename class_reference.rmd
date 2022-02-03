@@ -92,3 +92,128 @@ ppp_maryland_loans %>%
 ```
 
 ^^ Same, but then we're going to sum the totals.
+
+
+
+
+Tuesday, February 1, & prelab 2 - 
+
+
+Assigning a variable → 
+
+Within the code block, put the variable name first before the document name, before the commands that bring you your result that you’re storing:
+
+```{r}
+wv_summary <- wv_ppp_loans %>%
+  group_by(state) %>%
+  summarise(
+    count_loans = n(),
+    total_loans_amount = sum(amount),
+    mean_loan_amount = mean(amount),
+    median_loan_amount = median(amount),
+    min_loan_amount = min(amount),
+    max_loan_amount = max(amount)
+  ) %>%
+  arrange(desc(max_loan_amount))
+```
+
+How to arrange by ascending order:
+arrange(header name)
+
+So, arrange() by default puts them in ascending order.
+
+
+If you run a block of code, and you get a block of red error text, and you run it again and it works, it was just a warning.
+
+A "read" command can unzip zipped CSV files, R can read it. Really good if you're concerned about space.
+
+Highlight a line of text --> command + Enter, runs the line of selected code. 
+
+
+```{r}
+head(maryland_ppp)
+summary(maryland_ppp)
+colnames(maryland_ppp)
+glimpse(maryland_ppp)
+```
+
+^^ This gives you quick looks at a lot of the codes we ran previously.
+
+Data types: dbl = a number.
+
+```{r}
+maryland_ppp %>%
+  select(loan_number, amount, payroll_proceed) %>%
+  mutate(
+  percent_payroll = payroll_proceed/amount
+)
+```
+
+^^mutate(new_column = value)
+This means you're creating a new column that doesn't exist, and you're defining how the column functions. So when you say mutute -> name of new column equals the payroll proceed divided by the amount. 
+
+You can also make sure everything is uppercase. --> 
+#mutate(name = str_to_uppercase)
+
+A double == sign means to test for a value.
+
+Can run the following code in the console:
+maryland_with_in_out %>% group_by(in_out) %>% summarize(count =n())
+
+Lubridate - helps to parse dates and durations of time.
+
+```{r}
+# if/else example
+maryland_with_in_out <- maryland_ppp %>%
+  mutate(
+    in_out = if_else(
+        servicing_lender_state == 'MD', "IN", "OUT"
+      )
+  )
+# if it is Maryland, its marked in. If its not Maryland, its marked out. 
+```
+
+Task 9: Create a new column using case_when
+One common use of mutate is to create a new column and then populate it based on values in an existing column. For example, if we wanted to put the values in `jobs_retained` into broader categories in a new column called `jobs_retained_category` and we have multiple categories. We can use a function called `case_when` to make that easier.
+
+**Task** Run the following code to create a new column called `jobs_retained_category` based on the values of `jobs_retained`. Add a description of what this code does to your reference notebook.
+
+```{r}
+# case_when example
+maryland_jobs_categories <- maryland_ppp %>%
+mutate(
+  jobs_retained_category = case_when(
+    jobs_retained < 10 ~ 'under_10',
+    jobs_retained >= 10 & jobs_retained < 25 ~ '10_to_25',
+    jobs_retained >= 25 & jobs_retained < 50 ~ '25_to_50',
+    jobs_retained >= 50 & jobs_retained < 100 ~ '50_to_100',
+    jobs_retained >= 100 & jobs_retained < 250 ~ '100_to_250',
+    jobs_retained >= 250 & jobs_retained < 500 ~ '250_to_500',
+    jobs_retained == 500 ~ '500'
+  )
+)
+# and then in the console, run the following line:
+# maryland_jobs_categories %>% group_by(jobs_retained_category) %>% summarize(count =n()) #
+```
+
+```{r}
+prince_georges <- maryland_ppp %>% filter(project_county_name == "PRINCE GEORGES")
+head(prince_georges)
+```
+
+^^ this will limit the data to the specific county name.
+
+```{r}
+maryland_ppp %>%
+  mutate(Month = floor_date(date_approved, "month")) %>%
+  group_by(Month) %>%
+  summarise(total = n()) %>%
+  arrange(desc(total))
+```
+
+^^ this allows you to see the data by what date it was approved. It then groups the loans per month and shows you which date had the most amount of loans approved.
+
+-
+
+Thursday, February 3 & lab 2 - 
+
