@@ -217,3 +217,27 @@ maryland_ppp %>%
 
 Thursday, February 3 & lab 2 - 
 
+You can log into R and click "run all" and it'll run all the code in the lab/prelab.
+
+mutate(project_city = str_to_upper(project_city))
+^ this make everything uppercase.
+
+```{r}
+and_prince_georges <- maryland_ppp %>% filter(project_county_name == "PRINCE GEORGES" & business_type == "Non-Profit Organization" & amount > 150000)
+
+nrow(and_prince_georges)
+```
+
+^If that "&" between the non profit and amount is flipped to an “OR,” you’re getting wayyyyy more records because more gets accepted into the qualifications. 
+
+IN the prelab 2, we had a lubridate command that was:
+CleanDate = ymd_hms(date_approved). But we didn't have HMS (hour minute second) in the dataset, so we only end up running ymd(date_approved). That gives us a clear <date> field.
+
+```{r}
+maryland_ppp %>%
+  mutate(Month = floor_date(date_approved, "month")) %>%
+  group_by(Month) %>%
+  summarise(total = n()) %>%
+  arrange(desc(total))
+# allows you to group by month, by the first of each month. Hence "floor date". There's also a ceiling date, which rounds it up to the next month, which is kinda bad. You might only use that if you're talking about a deadline, so you want to see everything that came in before that.
+```
