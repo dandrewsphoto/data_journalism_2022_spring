@@ -257,7 +257,7 @@ arnold_md_loans
 
 ### Task 6: Use clean_names()
 **Task** Run the following codeblock to use the `clean_names()` function from janitor to standardize column names. How does the function change the name of the column "1_id"? Answer below. Add a description of what this code does to your reference notebook.
-**Answer**
+**Answer** It puts an x in front of the number at the beginning of the column name.
 
 
 ```{r}
@@ -277,6 +277,7 @@ cleaned_arnold_md_loans
 cleaned_arnold_md_loans <- arnold_md_loans %>%
   clean_names() %>%
   rename(id = x1_id)
+#this gives a chance to specifically rename all instances with numbers before _id and change them to id.
 
 # display the cleaned dataset
 cleaned_arnold_md_loans

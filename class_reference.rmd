@@ -275,6 +275,30 @@ if you have to load something and it restarts the R session, you likely have to 
 ```{r}
 # cleaning function
 cleaned_arnold_md_loans <- arnold_md_loans %>%
+  clean_names()
+#this changed the 1_id column name to x1_id, making it easier to clean up.
+
+# display the cleaned dataset
+cleaned_arnold_md_loans
+```
+
+```{r}
+# cleaning function
+cleaned_arnold_md_loans <- arnold_md_loans %>%
+  clean_names() %>%
+  rename(id = x1_id)
+#this gives a chance to specifically rename all instances with numbers before _id and change them to id.
+
+# display the cleaned dataset
+cleaned_arnold_md_loans
+
+
+```
+
+
+```{r}
+# cleaning function
+cleaned_arnold_md_loans <- arnold_md_loans %>%
   clean_names() %>%
   rename(id = x1_id) %>%
   mutate(amount = as.numeric(amount)) %>%
