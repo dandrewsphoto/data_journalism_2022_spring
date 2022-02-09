@@ -240,7 +240,7 @@ arnold_md_loans <- read_rds("arnold_md_loans.rds")
 
 ### Task 4: Examine the data with glimpse
 **Task** Run the following codeblock to glimpse the data.  What data type is the "amount" field? Answer below.
-**Answer**
+**Answer** character
 ```{r}
 glimpse(arnold_md_loans)
 ```
