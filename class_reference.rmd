@@ -241,3 +241,13 @@ maryland_ppp %>%
   arrange(desc(total))
 # allows you to group by month, by the first of each month. Hence "floor date". There's also a ceiling date, which rounds it up to the next month, which is kinda bad. You might only use that if you're talking about a deadline, so you want to see everything that came in before that.
 ```
+
+
+Pre-lab 3:
+
+```{r}
+dataset_name %>% 
+mutate(id = as.character(id))
+# This changes the id field, which is often interpreted as a number, to a character type instead.
+# English translation: change=the id field from its current number type, make it appear as a character type (the number here will be the id number that appears in each row)
+```
