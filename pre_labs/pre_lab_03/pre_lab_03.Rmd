@@ -171,7 +171,7 @@ library(lubridate)
 
 ### Task 13: Look for date gaps in data
 **Task** Run the following codeblock to create a new column called "month_year_approved" that extracts the month and year from the "date_approved" column.  Group by the new "month_year_approved" column, count, and sort by "month_year_approved". How many loans are there in the data for October 2020? Answer below. Add a description of what this code does to your reference notebook.
-**Answer**
+**Answer** 0. It skips from August 2020 to January 2021.
 ```{r}
 ppp_maryland_loans %>%
   mutate(month_year_approved = floor_date(date_approved, "month")) %>%
@@ -184,7 +184,7 @@ ppp_maryland_loans %>%
 
 ### Task 14: Check for suspicious outliers
 **Task** Run the following codeblock to find the largest and smallest loans in the data, by using summarise() without grouping. How much is the largest loan for? How much is the smallest loan for? Are either of these suspicious to you? Why or why not? Answer below.
-**Answer**
+**Answer** Largest loan: 10,000,000, Smallest loan: 6. 10 million seems like a lot of money and $6 seems extremely suspicious.
 ```{r}
 
 ppp_maryland_loans %>%
@@ -195,7 +195,7 @@ ppp_maryland_loans %>%
 
 ### Task 15: Look at smallest loans
 **Task** Run the following codeblock to examine all loans under $100. How many are there? Answer below.
-**Answer**
+**Answer** There are 2 loans under 100.
 ```{r}
 
 ppp_maryland_loans %>%
@@ -204,13 +204,14 @@ ppp_maryland_loans %>%
 
 ### Task 16: Look for internal consistency
 **Task** Run the following codeblock to examine all loans under $100 and look at whether the various fields with amounts align. Do they? Answer below.
-**Answer**
+**Answer** They do align. GETGFTD LLC was approved for and received $6 across the board, and Legacy Spine and Pain LLC was approved for $78 and received $78 across the board.
 
 ```{r}
 
 ppp_maryland_loans %>%
  filter(amount < 100) %>%
   select(name, amount, initial_approval_amount, current_approval_amount, payroll_proceed)
+#select just shows you the specific columns you're looking for
 ```
 
 ## Chapter 11
@@ -248,7 +249,7 @@ And let's examine the full data set.
 
 ### Task 5: Examine the data table
 **Task** Run the following codeblock to examine the data. Name three problems the book chapter says exist in this data set that could prevent us from answering questions?  Answer below
-**Answer**
+**Answer** id column is named "1_id", street address column should be street_address, there are incorrect spellings of Arnold, some are capitalized some are lowercase, some are all caps, etc.
 
 ```{r}
 arnold_md_loans
@@ -285,7 +286,13 @@ cleaned_arnold_md_loans
 
 ### Task 8: Try summarizing the amount column
 **Task** Run the following codeblock to attempt to add up the amount of all loans. What does the error say when you run this code? What do you think it means? Answer below.
-**Answer**
+**Answer** The error message reads: 
+Error: Problem with `summarise()` column `total_amount`.
+ℹ `total_amount = sum(amount)`.
+x invalid 'type' (character) of argument
+Run `rlang::last_error()` to see where the error occurred.
+
+I think it has the amount listed as a character type, not a number type. So R is saying it can't add things that are character types.
 
 ```{r}
 # cleaning function
@@ -295,11 +302,10 @@ total_arnold_md_loans <- cleaned_arnold_md_loans %>%
 # display the cleaned dataset
 total_arnold_md_loans
 
-
 ```
 ### Task 9: Change data type for amount
 **Task** Run the following codeblock to attempt to change the datatype for the amount field to a number. What is the new data type (three letter code) for amount? Answer below.
-**Answer**
+**Answer** <dbl>
 
 ```{r}
 # cleaning function
@@ -315,7 +321,7 @@ cleaned_arnold_md_loans
 ```
 ### Task 10: Try again to summarize the amount column
 **Task** Run the following codeblock to add up the amount of all loans in this data.  What is the total? Answer below.
-**Answer**
+**Answer** 2,033,179
 ```{r}
 # cleaning function
 total_arnold_md_loans <- cleaned_arnold_md_loans %>%
@@ -329,7 +335,7 @@ total_arnold_md_loans
 
 ### Task 11: Check for duplicate rows
 **Task** Run the following codeblock to check for duplicate rows using get_dupes().  How many are there? What is the business name? Answer below.
-**Answer**
+**Answer** There are two instances of the same business named STUART JONES LLC. 
 
 ```{r}
 cleaned_arnold_md_loans %>%
@@ -338,7 +344,7 @@ cleaned_arnold_md_loans %>%
 
 ### Task 12: Check for duplicate rows
 **Task** Run the following codeblock to use distinct() to get rid of duplicate rows. How many rows does the new dataframe have? Answer below. Add a description of what this code does to your reference notebook.
-**Answer**
+**Answer** 5 new rows.
 
 ```{r}
 # cleaning function
@@ -347,6 +353,7 @@ cleaned_arnold_md_loans <- arnold_md_loans %>%
   rename(id = x1_id) %>%
   mutate(amount = as.numeric(amount)) %>%
   distinct()
+#this cuts down on duplicates, shows you the number of distinct rows. More accurate for everything.
 
 
 # display the cleaned dataset
@@ -366,6 +373,7 @@ cleaned_arnold_md_loans <- arnold_md_loans %>%
   mutate(amount = as.numeric(amount)) %>%
   distinct() %>%
   mutate(zip = str_sub(zip, start=1L, end=5L))
+#this makes all of the zip codes a uniform 5 numbers instead of the added on 4.
 
 
 # display the cleaned dataset
@@ -375,6 +383,7 @@ cleaned_arnold_md_loans
 
 ### Task 14: Clean up city field
 **Task** Run the following codeblock to use str_tot_title() to standarize capitalization in the "city" field. How many mispellings of Arnold remain after running this code? Answer below. Add a description of what this code does to your reference notebook.
+**Answer** 2 misspellings remain, Arnld and Anold. 
 
 ```{r}
 # cleaning function
@@ -385,6 +394,7 @@ cleaned_arnold_md_loans <- arnold_md_loans %>%
   distinct() %>%
   mutate(zip = str_sub(zip, start=1L, end=5L)) %>%
   mutate(city = str_to_title(city))
+#Standardizes the way a title (city) appears, like this: Baltimore
 
 
 # display the cleaned dataset
@@ -395,7 +405,7 @@ cleaned_arnold_md_loans
 
 ### Task 15: Clean up city field more with case_when()
 **Task** Run the following codeblock to use case_when() to fix misspellings of Arnold in the "city" field. How many mispellings of Arnold remain after running this code? Answer below.
-**Answer**
+**Answer** 1 remains, Arnld.
 
 ```{r}
 # cleaning function
@@ -419,7 +429,7 @@ cleaned_arnold_md_loans
 
 ### Task 16: Clean up city field more with case_when()
 **Task** Run the following codeblock to use case_when() to fix misspellings of Arnold in the "city" field using both the exact match method and the str_detect() method. How many mispellings of Arnold remain after running this code? Answer below. Add a description of what this code does to your reference notebook.
-**Answer**
+**Answer** No more misspellings. 
 ```{r}
 # cleaning function
 cleaned_arnold_md_loans <- arnold_md_loans %>%
@@ -431,8 +441,10 @@ cleaned_arnold_md_loans <- arnold_md_loans %>%
   mutate(city = str_to_title(city)) %>%
   mutate(city = case_when(
     city == "Anold" ~ "Arnold",
+    #above, the exact match method.
     str_detect(city,"^Arnl") ~ "Arnold",
     TRUE ~ city
+    #above, the standardize detect method.
   ))
 
 

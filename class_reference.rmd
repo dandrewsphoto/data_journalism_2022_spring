@@ -251,3 +251,114 @@ mutate(id = as.character(id))
 # This changes the id field, which is often interpreted as a number, to a character type instead.
 # English translation: change=the id field from its current number type, make it appear as a character type (the number here will be the id number that appears in each row)
 ```
+
+```{r}
+ppp_maryland_loans %>%
+  mutate(month_year_approved = floor_date(date_approved, "month")) %>%
+  #create a new column called month_year_approved, which equals the floor date of the month of the date approved.
+  group_by(month_year_approved) %>%
+  #group the new month_year_approved column by...
+   summarise(
+    count=n()
+  ) %>%
+  #...summing their values..
+  arrange(month_year_approved)
+#... and arranging them by months
+```
+
+The "could not find function "%>%” message" almost always means you don’t have the tidyverse loaded. Load that library and try again.
+
+If the GitHub commit is too large, either zip the dataset file before commiting or leave it out of the commit all together.
+
+if you have to load something and it restarts the R session, you likely have to reload the library that you're working in. So the tidyverse, janitor, etc.
+
+```{r}
+# cleaning function
+cleaned_arnold_md_loans <- arnold_md_loans %>%
+  clean_names() %>%
+  rename(id = x1_id) %>%
+  mutate(amount = as.numeric(amount)) %>%
+  distinct()
+#this cuts down on duplicates, shows you the number of distinct rows. More accurate for everything.
+
+
+# display the cleaned dataset
+cleaned_arnold_md_loans
+
+```
+
+```{r}
+# cleaning function
+cleaned_arnold_md_loans <- arnold_md_loans %>%
+  clean_names() %>%
+  rename(id = x1_id) %>%
+  mutate(amount = as.numeric(amount)) %>%
+  distinct() %>%
+  mutate(zip = str_sub(zip, start=1L, end=5L))
+#this makes all of the zip codes a uniform 5 numbers instead of the added on 4.
+
+# display the cleaned dataset
+cleaned_arnold_md_loans
+
+```
+
+```{r}
+# cleaning function
+cleaned_arnold_md_loans <- arnold_md_loans %>%
+  clean_names() %>%
+  rename(id = x1_id) %>%
+  mutate(amount = as.numeric(amount)) %>%
+  distinct() %>%
+  mutate(zip = str_sub(zip, start=1L, end=5L)) %>%
+  mutate(city = str_to_title(city))
+#Standardizes the way a title (city) appears, like this: Baltimore
+
+
+# display the cleaned dataset
+cleaned_arnold_md_loans
+
+```
+
+```{r}
+# cleaning function
+cleaned_arnold_md_loans <- arnold_md_loans %>%
+  clean_names() %>%
+  rename(id = x1_id) %>%
+  mutate(amount = as.numeric(amount)) %>%
+  distinct() %>%
+  mutate(zip = str_sub(zip, start=1L, end=5L)) %>%
+  mutate(city = str_to_title(city)) %>%
+  mutate(city = case_when(
+    city == "Anold" ~ "Arnold",
+    TRUE ~ city
+    #turns misspellings into the correct name, and only does it if its within the city column.
+  ))
+
+
+# display the cleaned dataset
+cleaned_arnold_md_loans
+
+```
+
+```{r}
+# cleaning function
+cleaned_arnold_md_loans <- arnold_md_loans %>%
+  clean_names() %>%
+  rename(id = x1_id) %>%
+  mutate(amount = as.numeric(amount)) %>%
+  distinct() %>%
+  mutate(zip = str_sub(zip, start=1L, end=5L)) %>%
+  mutate(city = str_to_title(city)) %>%
+  mutate(city = case_when(
+    city == "Anold" ~ "Arnold",
+    #above, the exact match method.
+    str_detect(city,"^Arnl") ~ "Arnold",
+    TRUE ~ city
+    #above, the standardize detect method.
+  ))
+
+
+# display the cleaned dataset
+cleaned_arnold_md_loans
+
+```
