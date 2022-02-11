@@ -53,7 +53,6 @@ new_cleaned_wv_cities <- wv_ppp_loans %>%
     city == "St.albans" ~ "Saint Albans",
     city == "St. Albans" ~ "Saint Albans",
     city == "S Charleston" ~ "South Charleston",
-    city == "wrong" ~ "correct",
     TRUE ~ city
   )
   ) %>% 
@@ -80,7 +79,7 @@ group by zipcode
 arrange by desc(amount)
 
 
-A2: Zip code 25301 had the most loans, totaling $160,721,321. JACKSON KELLY PLLC received the biggest loan in that zip code, totaling $5,068,472. It is located in Kanawha County, which encompasses the city of Charleston and congressional district WV-02. $5,126,618.6 of the loan was forgiven, which is more than the loan amount itself. I would guess a clerical error is the reason for the discrepency. I originally wondered if the difference was equal to the distance between the initial amount approved and the final amount paid, but those numbers are not the same. I'm not sure if interest played a role but 50,000 in interest doesn't seem right either.
+A2: Zip code 25301 had the most loans, totaling $160,721,321. JACKSON KELLY PLLC received the biggest loan in that zip code, totaling $5,068,472. It is located in Kanawha County, which encompasses the city of Charleston and congressional district WV-02. $5,126,618.6 of the loan was forgiven, which is more than the loan amount itself. I originally wondered if the difference was equal to the distance between the initial amount approved and the final amount paid, but those numbers are not the same. My best guess would be interest, but 50,000 in interest seems like too high of a value.
 
 ```{r}
 
@@ -121,11 +120,30 @@ Some hints to help you answer this question:
 * When you examine the disclosure forms, there may be lots of stock sales and retirement accounts mixed in.  Ignore those. In the table in the disclosure forms, look for "Partnership" or "C-Corp" in the column named "Income Type"
 * This is a link to details on passage of the [CARES ACT](https://www.congress.gov/bill/116th-congress/house-bill/748). You can find a link to how the House voted by clicking on a link from [this page](https://www.congress.gov/bill/116th-congress/house-bill/748/actions).
 
-A3:
+A3: Rep. Carol Devine Miller’s husband Matt Miller is the owner of multiple auto dealerships that received PPP loans, including: DM MOTOR, INC, DUTCH MILLER OF CHARLESTON, INC, DUTCH MILLER OF CHARLOTTE, INC, DUTCH MILLER SUBARU, INC, and DUTCH MILLER CHEVROLET, INC. The five businesses combined to receive $3,105,300 total. In the end, 5 Dutch Miller got 101.13% of its loans forgiven, or in other words made an extra $35,171. On April 23, 2020, Rep. Miller voted in favor of the legislation, and then blamed Congressional Democrats when it didn't pass for 14 days.
 
 ```{r}
 miller_motors <- wv_ppp_loans %>%
-  mutate(targeted_name())
+  mutate(new_name = case_when(
+    name == "DUTCH MILLER OF CHARLESTON, INC" ~ "Dutch Miller",
+    name == "DUTCH MILLER OF CHARLOTTE, INC" ~ "Dutch Miller",
+    name == "DUTCH MILLER SUBARU, INC" ~ "Dutch Miller",
+    name == "DUTCH MILLER CHEVROLET, INC." ~ "Dutch Miller",
+    name == "DM MOTOR, INC" ~ "Dutch Miller",
+    TRUE ~ name
+  )
+  ) %>% 
+filter(new_name == "Dutch Miller") %>% 
+   # I used summarise(sum(amount) to get the amount total of 3105300.
+ # I tried to use summarise(sum(forgiveness_amount)) but I got the following error message: "Error: negative length vectors are not allowed" --> So I added all of the forgiveness amount values in the console and got 3140471.
+#I then divided the forgiveness total (3140471) by the total loan amount (3105300) in the console, and multiplied it by 100, which gave me 101.13%
+  select(amount, forgiveness_amount) %>%
+  mutate(
+  percent_forgiven = (forgiveness_amount/amount)*100
+)
+#and then just to double check, I took the amounts I got in the command above, added them all up in the console, and divided them by 5. Also got 101.13%.
+
+
 # Hint
 # First, create a dataframe that only has loans to those five companies
 # Second, use that newly created dataframe to calculate total loan amount and percentage forgiven for those companies
