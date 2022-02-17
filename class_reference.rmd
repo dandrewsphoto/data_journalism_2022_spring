@@ -386,3 +386,50 @@ cleaned_arnold_md_loans <- arnold_md_loans %>%
 cleaned_arnold_md_loans
 
 ```
+
+
+
+Tuesday, February 15 - PreLab 04 - 
+
+```{r}
+# bind_rows with list
+estimates <- bind_rows(list(popestimate_2010, popestimate_2015, popestimate_2020))
+View(estimates)
+#bind_rows ----> If multiple datasets have the same exact data types, aka columns, bind_rows can be used to stack them together. i.e. Multiple years of the same exact data.
+
+#Stacking these together vertically, if they have the same number of columns. If one of these datasets had a different number of columns, it would NOT end up in the final result because this only works on datasets that are all the same columns.
+```
+
+```{r}
+maryland_ppp_with_naics <- maryland_ppp %>% left_join(naics_codes)
+#"take the ppp loan dataset, join it with the naics code, and save it as maryland_ppp_with_naics."
+#great use of this is to group by naics_codes and then see how many businesses are there in each industry.
+```
+
+```{r}
+# join on zip - but *there's a problem*
+maryland_ppp_with_naics_and_demographics <- maryland_ppp_with_naics %>% left_join(maryland_zcta, by=c("zip"="ZCTA5N"))
+#this code only works if the code below is run first IF the ZCTA5N column is first changed to a character type...
+#...because the prompt is having you join a character type with a number type.
+#But, the idea is that its joining the Zip Code Tabulation Area with the PPP loan data.
+#The correct code is below:
+```
+
+```{r}
+maryland_zcta <- maryland_zcta %>% mutate(across(ZCTA5N, as.character))
+#this is changing the datatype of the "zip code tabulation area of 5 numbers" to a character type, instead of it originally being a number type.
+```
+
+Asking the data demographics questions after we've merged the demographics with the zip code tabulation areas:
+
+Zip Code Tab Area with more than 50% non-Hispanic Black population: find the number of loans, the average amount of the loans, and the median amount of the loans.
+
+```{r}
+# zcta with > 50% non-Hispanic Black population
+maryland_ppp_with_naics_and_demographics %>%
+  filter(PNHB > 50) %>%
+  summarize(
+    count = n(),
+    avgamount = mean(amount),
+    medamount = median(amount))
+```
