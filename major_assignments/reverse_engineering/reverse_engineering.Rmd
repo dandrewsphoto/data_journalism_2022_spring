@@ -1,0 +1,291 @@
+---
+title: "Reverse Engineering Project"
+author: "Dave Andrews, Maddy Peek, Eve Sampson"
+date: "3/5/22"
+output:
+  html_document:
+    theme: cerulean
+    highlight: pygments
+    toc: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction 
+
+In this notebook, we are reverse engineering the story, [Nearly 250 women have been fatally shot by police since 2015](https://www.washingtonpost.com/graphics/2020/investigations/police-shootings-women/)
+
+## Load libraries
+
+Loading required libraries for this analysis.
+
+```{r echo=FALSE, message=FALSE}
+library(tidyverse)
+library(janitor)
+library(lubridate)
+```
+
+## Load and Cleaning Data
+
+In this section, describe the source of the data, write a basic data dictionary for data you are working with, and discuss any caveats or issues you discovered working with this data. 
+
+```{r}
+# Load required data
+fatal_police_shootings_data <- read_csv('data/fatal-police-shootings-data.csv')
+# Path to data should be loaded from folder "data" i.e. read_csv("data/name_of_data.csv")
+
+# Clean required data and prepare for analysis if needed. 
+
+
+```
+
+## Sentences to Engineer
+In this notebook, we are reverse engineering five sentences from the story.
+
+### Sentence 1
+
+* **Sentence text**: [Paste in sentence to engineer here] - “The Post began tracking fatal police shootings in a database in January 2015, months after a White police officer in Ferguson, Mo., killed Michael Brown, an unarmed Black man during a confrontation. Since then, police have shot and killed about 1,000 people a year.”
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?] Yes. Grouping the dates by month and then again by year, there have been about 1,000 people fatally shot by police every year since 2015.
+
+```{r}
+fatal_police_shootings_data_year <- fatal_police_shootings_data %>%
+  mutate(Month = floor_date(date, "month")) %>%
+  #filter(gender == 'F') %>% 
+  #filter(signs_of_mental_illness == 'TRUE') %>% 
+  mutate(year = case_when(
+  #2015
+    Month == "2015-01-01" ~ "2015",
+    Month == "2015-02-01" ~ "2015",
+    Month == "2015-03-01" ~ "2015",
+    Month == "2015-04-01" ~ "2015",
+    Month == "2015-05-01" ~ "2015",
+    Month == "2015-06-01" ~ "2015",
+    Month == "2015-07-01" ~ "2015",
+    Month == "2015-08-01" ~ "2015",
+    Month == "2015-09-01" ~ "2015",
+    Month == "2015-10-01" ~ "2015",
+    Month == "2015-11-01" ~ "2015",
+    Month == "2015-12-01" ~ "2015",
+    #2016
+    Month == "2016-01-01" ~ "2016",
+    Month == "2016-02-01" ~ "2016",
+    Month == "2016-03-01" ~ "2016",
+    Month == "2016-04-01" ~ "2016",
+    Month == "2016-05-01" ~ "2016",
+    Month == "2016-06-01" ~ "2016",
+    Month == "2016-07-01" ~ "2016",
+    Month == "2016-08-01" ~ "2016",
+    Month == "2016-09-01" ~ "2016",
+    Month == "2016-10-01" ~ "2016",
+    Month == "2016-11-01" ~ "2016",
+    Month == "2016-12-01" ~ "2016",
+    #2017
+    Month == "2017-01-01" ~ "2017",
+    Month == "2017-02-01" ~ "2017",
+    Month == "2017-03-01" ~ "2017",
+    Month == "2017-04-01" ~ "2017",
+    Month == "2017-05-01" ~ "2017",
+    Month == "2017-06-01" ~ "2017",
+    Month == "2017-07-01" ~ "2017",
+    Month == "2017-08-01" ~ "2017",
+    Month == "2017-09-01" ~ "2017",
+    Month == "2017-10-01" ~ "2017",
+    Month == "2017-11-01" ~ "2017",
+    Month == "2017-12-01" ~ "2017",
+    #2018
+    Month == "2018-01-01" ~ "2018",
+    Month == "2018-02-01" ~ "2018",
+    Month == "2018-03-01" ~ "2018",
+    Month == "2018-04-01" ~ "2018",
+    Month == "2018-05-01" ~ "2018",
+    Month == "2018-06-01" ~ "2018",
+    Month == "2018-07-01" ~ "2018",
+    Month == "2018-08-01" ~ "2018",
+    Month == "2018-09-01" ~ "2018",
+    Month == "2018-10-01" ~ "2018",
+    Month == "2018-11-01" ~ "2018",
+    Month == "2018-12-01" ~ "2018",
+    #2019
+    Month == "2019-01-01" ~ "2019",
+    Month == "2019-02-01" ~ "2019",
+    Month == "2019-03-01" ~ "2019",
+    Month == "2019-04-01" ~ "2019",
+    Month == "2019-05-01" ~ "2019",
+    Month == "2019-06-01" ~ "2019",
+    Month == "2019-07-01" ~ "2019",
+    Month == "2019-08-01" ~ "2019",
+    Month == "2019-09-01" ~ "2019",
+    Month == "2019-10-01" ~ "2019",
+    Month == "2019-11-01" ~ "2019",
+    Month == "2019-12-01" ~ "2019",
+    #2020
+    Month == "2020-01-01" ~ "2020",
+    Month == "2020-02-01" ~ "2020",
+    Month == "2020-03-01" ~ "2020",
+    Month == "2020-04-01" ~ "2020",
+    Month == "2020-05-01" ~ "2020",
+    Month == "2020-06-01" ~ "2020",
+    Month == "2020-07-01" ~ "2020",
+    Month == "2020-08-01" ~ "2020",
+    Month == "2020-09-01" ~ "2020",
+    Month == "2020-10-01" ~ "2020",
+    Month == "2020-11-01" ~ "2020",
+    Month == "2020-12-01" ~ "2020",
+    #2021
+    Month == "2021-01-01" ~ "2021",
+    Month == "2021-02-01" ~ "2021",
+    Month == "2021-03-01" ~ "2021",
+    Month == "2021-04-01" ~ "2021",
+    Month == "2021-05-01" ~ "2021",
+    Month == "2021-06-01" ~ "2021",
+    Month == "2021-07-01" ~ "2021",
+    Month == "2021-08-01" ~ "2021",
+    Month == "2021-09-01" ~ "2021",
+    Month == "2021-10-01" ~ "2021",
+    Month == "2021-11-01" ~ "2021",
+    Month == "2021-12-01" ~ "2021",
+    #2022
+    Month == "2022-01-01" ~ "2022",
+    Month == "2022-02-01" ~ "2022",
+    Month == "2022-03-01" ~ "2022",
+    Month == "2022-04-01" ~ "2022",
+    Month == "2022-05-01" ~ "2022",
+    Month == "2022-06-01" ~ "2022",
+    Month == "2022-07-01" ~ "2022",
+    Month == "2022-08-01" ~ "2022",
+    Month == "2022-09-01" ~ "2022",
+    Month == "2022-10-01" ~ "2022",
+    Month == "2022-11-01" ~ "2022",
+    Month == "2022-12-01" ~ "2022"
+)
+)
+```
+
+```{r}
+fatal_police_shootings_data_year %>% 
+group_by(year) %>%
+ summarize(
+    count = n()
+ )
+```
+
+
+### Sentence 2
+
+* **Sentence text**: [Paste in sentence to engineer here]
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
+```{r}
+# Put code to reverse engineer sentence here
+
+#### THIS IS INCOMPLETE FOR NEXT WEEK ---
+
+
+fatal_police_shootings_before_after_article <- fatal_police_shootings_data_year %>%
+  mutate(before_or_after = case_when(
+    #by year, skipping 2020
+    year == "2015" ~ "before",
+year == "2015" ~ "before",
+year == "2017" ~ "before",
+year == "2018" ~ "before",
+year == "2019" ~ "before",
+#skip 2020
+year == "2021" ~ "after",
+year == "2022" ~ "after",
+#by month, skipping September of 2020
+Month == "2020-01-01" ~ "before",
+Month == "2020-02-01" ~ "before",
+Month == "2020-03-01" ~ "before",
+Month == "2020-04-01" ~ "before",
+Month == "2020-05-01" ~ "before",
+Month == "2020-06-01" ~ "before",
+Month == "2020-07-01" ~ "before",
+Month == "2020-08-01" ~ "before",
+#skip 2020-09-01
+Month == "2020-10-01" ~ "after",
+Month == "2020-11-01" ~ "after",
+Month == "2020-12-01" ~ "after",
+#by specific days of September
+date == "2020-09-01" ~ "before",
+date == "2020-09-02" ~ "before",
+date == "2020-09-03" ~ "before",
+#!!!!JUDGEMENT - Article published on 9/4/20, counting the entries on today as happening after it was published
+date == "2020-09-04" ~ "after",
+date == "2020-09-05" ~ "after",
+date == "2020-09-06" ~ "after",
+date == "2020-09-07" ~ "after",
+date == "2020-09-08" ~ "after",
+date == "2020-09-09" ~ "after",
+date == "2020-09-10" ~ "after",
+date == "2020-09-11" ~ "after",
+date == "2020-09-12" ~ "after",
+date == "2020-09-13" ~ "after",
+date == "2020-09-14" ~ "after",
+date == "2020-09-15" ~ "after",
+date == "2020-09-16" ~ "after",
+date == "2020-09-17" ~ "after",
+date == "2020-09-18" ~ "after",
+date == "2020-09-19" ~ "after",
+date == "2020-09-20" ~ "after",
+date == "2020-09-21" ~ "after",
+date == "2020-09-22" ~ "after",
+date == "2020-09-23" ~ "after",
+date == "2020-09-24" ~ "after",
+date == "2020-09-25" ~ "after",
+date == "2020-09-26" ~ "after",
+date == "2020-09-27" ~ "after",
+date == "2020-09-28" ~ "after",
+date == "2020-09-29" ~ "after",
+date == "2020-09-30" ~ "after"
+)
+)
+  
+    #filter(gender == 'F') %>% 
+  #filter(signs_of_mental_illness == 'TRUE') %>% 
+  #filter(year <= "2020")
+# Display results of code below this codeblock
+
+```
+
+### Sentence 3
+
+* **Sentence text**: [Paste in sentence to engineer here]
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
+```{r}
+# Put code to reverse engineer sentence here
+
+# Display results of code below this codeblock
+
+```
+
+### Sentence 4
+
+* **Sentence text**: [Paste in sentence to engineer here]
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
+```{r}
+# Put code to reverse engineer sentence here
+
+# Display results of code below this codeblock
+
+```
+
+### Sentence 5
+
+* **Sentence text**: [Paste in sentence to engineer here]
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+
+```{r}
+# Put code to reverse engineer sentence here
+
+# Display results of code below this codeblock
+
+```
+
+-30-
