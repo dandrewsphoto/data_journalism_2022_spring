@@ -131,22 +131,30 @@ for (row_number in 1:nrow(df_states_list)) {
   #save each state as an invididual row
   
   url <- each_row_df$url
+  #define the url to pull from
 
   state_ppp_loans <- url %>%
     read_html() %>%
       html_elements('tbody tr td') %>%
       html_text()
+  #define the table to pull from
   
     state_ppp_loans <- state_ppp_loans[[1]] %>%
       clean_names() %>%
-      #slice(2) %>%
       bind_cols(each_row_df) %>%
       #from prelab - 
+      #slice(2) %>%
       #mutate(nov_2021 = parse_number(nov_2021)) %>%
       #rename(nov_2021_employees = nov_2021) %>%
       #select(sector,description,nov_2021_employees)
  
+      #outstanding steps:
+      #combine rows
+      #save all 52 dataframes to themselves
       
+      
+      #various notes: 
+    
 # loan_data <- states_list %>%
  # read_html() %>%
  # html_table()
