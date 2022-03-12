@@ -55,210 +55,68 @@ In this notebook, we are reverse engineering five sentences from the story.
 ```{r}
 fatal_police_shootings_data_year <- fatal_police_shootings_data %>%
   mutate(Month = floor_date(date, "month")) %>%
-  #filter(gender == 'F') %>% 
-  #filter(signs_of_mental_illness == 'TRUE') %>% 
-  mutate(year = case_when(
-  #2015
-    Month == "2015-01-01" ~ "2015",
-    Month == "2015-02-01" ~ "2015",
-    Month == "2015-03-01" ~ "2015",
-    Month == "2015-04-01" ~ "2015",
-    Month == "2015-05-01" ~ "2015",
-    Month == "2015-06-01" ~ "2015",
-    Month == "2015-07-01" ~ "2015",
-    Month == "2015-08-01" ~ "2015",
-    Month == "2015-09-01" ~ "2015",
-    Month == "2015-10-01" ~ "2015",
-    Month == "2015-11-01" ~ "2015",
-    Month == "2015-12-01" ~ "2015",
-    #2016
-    Month == "2016-01-01" ~ "2016",
-    Month == "2016-02-01" ~ "2016",
-    Month == "2016-03-01" ~ "2016",
-    Month == "2016-04-01" ~ "2016",
-    Month == "2016-05-01" ~ "2016",
-    Month == "2016-06-01" ~ "2016",
-    Month == "2016-07-01" ~ "2016",
-    Month == "2016-08-01" ~ "2016",
-    Month == "2016-09-01" ~ "2016",
-    Month == "2016-10-01" ~ "2016",
-    Month == "2016-11-01" ~ "2016",
-    Month == "2016-12-01" ~ "2016",
-    #2017
-    Month == "2017-01-01" ~ "2017",
-    Month == "2017-02-01" ~ "2017",
-    Month == "2017-03-01" ~ "2017",
-    Month == "2017-04-01" ~ "2017",
-    Month == "2017-05-01" ~ "2017",
-    Month == "2017-06-01" ~ "2017",
-    Month == "2017-07-01" ~ "2017",
-    Month == "2017-08-01" ~ "2017",
-    Month == "2017-09-01" ~ "2017",
-    Month == "2017-10-01" ~ "2017",
-    Month == "2017-11-01" ~ "2017",
-    Month == "2017-12-01" ~ "2017",
-    #2018
-    Month == "2018-01-01" ~ "2018",
-    Month == "2018-02-01" ~ "2018",
-    Month == "2018-03-01" ~ "2018",
-    Month == "2018-04-01" ~ "2018",
-    Month == "2018-05-01" ~ "2018",
-    Month == "2018-06-01" ~ "2018",
-    Month == "2018-07-01" ~ "2018",
-    Month == "2018-08-01" ~ "2018",
-    Month == "2018-09-01" ~ "2018",
-    Month == "2018-10-01" ~ "2018",
-    Month == "2018-11-01" ~ "2018",
-    Month == "2018-12-01" ~ "2018",
-    #2019
-    Month == "2019-01-01" ~ "2019",
-    Month == "2019-02-01" ~ "2019",
-    Month == "2019-03-01" ~ "2019",
-    Month == "2019-04-01" ~ "2019",
-    Month == "2019-05-01" ~ "2019",
-    Month == "2019-06-01" ~ "2019",
-    Month == "2019-07-01" ~ "2019",
-    Month == "2019-08-01" ~ "2019",
-    Month == "2019-09-01" ~ "2019",
-    Month == "2019-10-01" ~ "2019",
-    Month == "2019-11-01" ~ "2019",
-    Month == "2019-12-01" ~ "2019",
-    #2020
-    Month == "2020-01-01" ~ "2020",
-    Month == "2020-02-01" ~ "2020",
-    Month == "2020-03-01" ~ "2020",
-    Month == "2020-04-01" ~ "2020",
-    Month == "2020-05-01" ~ "2020",
-    Month == "2020-06-01" ~ "2020",
-    Month == "2020-07-01" ~ "2020",
-    Month == "2020-08-01" ~ "2020",
-    Month == "2020-09-01" ~ "2020",
-    Month == "2020-10-01" ~ "2020",
-    Month == "2020-11-01" ~ "2020",
-    Month == "2020-12-01" ~ "2020",
-    #2021
-    Month == "2021-01-01" ~ "2021",
-    Month == "2021-02-01" ~ "2021",
-    Month == "2021-03-01" ~ "2021",
-    Month == "2021-04-01" ~ "2021",
-    Month == "2021-05-01" ~ "2021",
-    Month == "2021-06-01" ~ "2021",
-    Month == "2021-07-01" ~ "2021",
-    Month == "2021-08-01" ~ "2021",
-    Month == "2021-09-01" ~ "2021",
-    Month == "2021-10-01" ~ "2021",
-    Month == "2021-11-01" ~ "2021",
-    Month == "2021-12-01" ~ "2021",
-    #2022
-    Month == "2022-01-01" ~ "2022",
-    Month == "2022-02-01" ~ "2022",
-    Month == "2022-03-01" ~ "2022",
-    Month == "2022-04-01" ~ "2022",
-    Month == "2022-05-01" ~ "2022",
-    Month == "2022-06-01" ~ "2022",
-    Month == "2022-07-01" ~ "2022",
-    Month == "2022-08-01" ~ "2022",
-    Month == "2022-09-01" ~ "2022",
-    Month == "2022-10-01" ~ "2022",
-    Month == "2022-11-01" ~ "2022",
-    Month == "2022-12-01" ~ "2022"
-)
-)
-```
-
-```{r}
-fatal_police_shootings_data_year %>% 
-group_by(year) %>%
- summarize(
-    count = n()
- )
+  mutate(year = year(date)) #%>% 
+ #group_by(year) %>%
+ #summarize(
+    #count = n()
+ #)
 ```
 
 
 ### Sentence 2
 
-* **Sentence text**: [Paste in sentence to engineer here]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Sentence text**: [Paste in sentence to engineer here] - “About 31 percent, or 77, of the 247 women fatally shot by police since 2015 had mental health issues, compared to 22 percent of the 5,362 men killed.”
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?] We came pretty close. Instead of 77 of the 247 women noted in the sentence, we got 79/248 filtering for the conditions outlined in the sentence. We did, however, get very similar percentages, successfully illustrating the point of the sentence. We think there are a few unknowns that account for these slight variations in data. 1. We don't know if additional data was entered for this timeframe after the article was published. Perhaps more cases were added/more conditions were included that became known after the published date. 2. We don't know what specific date was used as the cutoff date when this article was published. Since it was published on 9/4/20, we figured any entries that occured on 9/4/20 itself was likely not included in the statistics. Playing around with the cutoff date as early as 9/1/20 didn't produce exact results either. Still, we were able to reproduce the overarching point of the sentence, which is that mental health was a resulting factor in about 31% of women fatally shot by police since 2015, while mental health only accounted for about 22% of the men fatally shot by police since 2015.
 
 ```{r}
+
 # Put code to reverse engineer sentence here
-
-#### THIS IS INCOMPLETE FOR NEXT WEEK ---
-
-
-fatal_police_shootings_before_after_article <- fatal_police_shootings_data_year %>%
-  mutate(before_or_after = case_when(
-    #by year, skipping 2020
-    year == "2015" ~ "before",
-year == "2015" ~ "before",
-year == "2017" ~ "before",
-year == "2018" ~ "before",
-year == "2019" ~ "before",
-#skip 2020
-year == "2021" ~ "after",
-year == "2022" ~ "after",
-#by month, skipping September of 2020
-Month == "2020-01-01" ~ "before",
-Month == "2020-02-01" ~ "before",
-Month == "2020-03-01" ~ "before",
-Month == "2020-04-01" ~ "before",
-Month == "2020-05-01" ~ "before",
-Month == "2020-06-01" ~ "before",
-Month == "2020-07-01" ~ "before",
-Month == "2020-08-01" ~ "before",
-#skip 2020-09-01
-Month == "2020-10-01" ~ "after",
-Month == "2020-11-01" ~ "after",
-Month == "2020-12-01" ~ "after",
-#by specific days of September
-date == "2020-09-01" ~ "before",
-date == "2020-09-02" ~ "before",
-date == "2020-09-03" ~ "before",
-#!!!!JUDGEMENT - Article published on 9/4/20, counting the entries on today as happening after it was published
-date == "2020-09-04" ~ "after",
-date == "2020-09-05" ~ "after",
-date == "2020-09-06" ~ "after",
-date == "2020-09-07" ~ "after",
-date == "2020-09-08" ~ "after",
-date == "2020-09-09" ~ "after",
-date == "2020-09-10" ~ "after",
-date == "2020-09-11" ~ "after",
-date == "2020-09-12" ~ "after",
-date == "2020-09-13" ~ "after",
-date == "2020-09-14" ~ "after",
-date == "2020-09-15" ~ "after",
-date == "2020-09-16" ~ "after",
-date == "2020-09-17" ~ "after",
-date == "2020-09-18" ~ "after",
-date == "2020-09-19" ~ "after",
-date == "2020-09-20" ~ "after",
-date == "2020-09-21" ~ "after",
-date == "2020-09-22" ~ "after",
-date == "2020-09-23" ~ "after",
-date == "2020-09-24" ~ "after",
-date == "2020-09-25" ~ "after",
-date == "2020-09-26" ~ "after",
-date == "2020-09-27" ~ "after",
-date == "2020-09-28" ~ "after",
-date == "2020-09-29" ~ "after",
-date == "2020-09-30" ~ "after"
-)
-)
-  
-    #filter(gender == 'F') %>% 
-  #filter(signs_of_mental_illness == 'TRUE') %>% 
-  #filter(year <= "2020")
-# Display results of code below this codeblock
-
+fatal_police_shootings_before_article <- fatal_police_shootings_data_year %>%
+  filter(date < "2020-09-04")
+#this gets us all entries that happened before 2020-09-04 when the article was published.
 ```
+
+```{r}
+women_shot_mentalhealth <- fatal_police_shootings_before_article %>%
+filter(gender == 'F') %>% 
+#nrow() = 248 rows
+filter(signs_of_mental_illness == 'TRUE') %>% 
+  filter(manner_of_death == "shot") #%>% 
+ # nrow() = 79
+#(79/248)*100 = 31.8%
+
+#79 of the 248 of women who were fatally shot by police, or 31.8%, were reported to show signs of mental illness.
+
+# Display results of code below this codeblock
+```
+
+```{r}
+men_shot_mentalhealth <- fatal_police_shootings_before_article %>%
+filter(gender == 'M') %>% 
+#nrow() = 5362
+filter(signs_of_mental_illness == 'TRUE') %>% 
+filter(manner_of_death == "shot") #%>% 
+#nrow() = 1,153
+#(1153/5362)*100 = 21.5%
+
+#21.5% of men who were fatally shot by police were reported to show signs of mental illness.
+
+# Display results of code below this codeblock
+```
+
 
 ### Sentence 3
 
-* **Sentence text**: [Paste in sentence to engineer here]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Sentence text**: [Paste in sentence to engineer here] “Since 2015, police have fatally shot nearly 250 women. Like Taylor, 89 of them were killed at homes or residences where they sometimes stayed.”
+* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?] We were able to confirm the first part of the sentence; by filtering for gender and dates before publication, we got 248 fatalities. We are unable to discern if they were killed at their homes or residences where they stayed based on the data. We would need to check the locations against their home addresses to verify.
 
 ```{r}
 # Put code to reverse engineer sentence here
+
+women_shot_since_2015 <- fatal_police_shootings_before_article %>% 
+  filter(gender == "F")
+# %>% 
+#nrow() = 248
 
 # Display results of code below this codeblock
 
