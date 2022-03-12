@@ -1,0 +1,217 @@
+---
+title: "lab_07"
+author: "sean mussenden"
+date: "8/25/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## About this lab
+
+To complete this lab, you need to:
+* write code in empty codeblocks provided to answer questions included (look for **Q**).
+* write out the answer in the form of a complete sentence in the space given (look for **A**).
+
+When you are finished, commit changes and push to your personal GitHub repo, then submit the URL to this document on ELMS.
+
+## Load libraries and establish settings
+**Task**: Load rvest, janitor and the tidyverse
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+library(rvest)
+library(tidyverse)
+library(janitor)
+# Load the tidyverse,rvest,janitor
+
+```
+
+
+Q1. How many individual cases has the U.S. Department of Justice filed against people accused of fraud related to the PPP or EIDL loan program, according to the DOJ website listing those cases: https://www.justice.gov/criminal-fraud/cares-act-fraud?  An example of one case that appears on this page is "U.S. v. Richard Ayvazyan et al". To answer this question, you will need to use rvest to scrape the data on this single webpage into a dataframe that lists only case names. Hint: you will need to make use of html_elements() and html_text() -- a function that extracts text inside of an html tag -- for this.
+A1. 100 cases.
+
+```{r}
+justice_url <- "https://www.justice.gov/criminal-fraud/cares-act-fraud"
+
+fraud_cases <- justice_url %>%
+  read_html() %>%
+  html_elements('ul li b') %>% 
+  html_text()
+
+df_fraud_cases <- as.data.frame(fraud_cases) %>%
+  clean_names() %>%
+  distinct() #%>%
+  #turns the list into a dataframe
+  #nrow()
+```
+
+Q2. In how many individual judicial districts has the U.S. Department of Justice filed cases against people accused of fraud related to the PPP or EIDL loan program, according to the DOJ website listing those cases: https://www.justice.gov/criminal-fraud/cares-act-fraud?  Note: an example of a judicial district is "Southern District of Florida". You will need to use rvest scrape the data on this single webpage into a dataframe.
+A2. 31 individual judicial districts. 
+
+```{r}
+jursdictions_url <- "https://www.justice.gov/criminal-fraud/cares-act-fraud"
+
+region <- jursdictions_url %>%
+  read_html() %>%
+  html_elements('b i') %>% 
+  html_text()
+
+df_specific_districts <- as.data.frame(region) %>%
+  clean_names() %>%
+  distinct() #%>%
+  #nrow()
+```
+
+Q4. The website (https://www.justice.gov/criminal-fraud/cares-act-fraud) shows that the DOJ filed more cases in the Southern District of Florida than in any other district. One of those cases was filed against someone named "Diamond Blue Smith". Who is Smith, and what was he accused of, according to the criminal complaint? If you were an editor, would you have assigned a reporter to write a story about this case when the complaint was filed in court? Why or why not?
+A4. Diamond Blue Smith is a rapper and member of Pretty Ricky. He was charged with fraud, bank fraud, and conspiracy to commit wire fraud and bank fraud. He is alleged to have obtained a PPP loan of $426,717 for his company, Throwbackjersey.com LLC, using falsified documents. mith allegedly purchased a Ferrari for $96,000 and made other luxury purchases using PPP loan proceeds. The complaints allege that Smith and Johnson conspired with others to obtain millions of dollars in fraudulent PPP loans. The complaint further alleges that Smith sought PPP loans on behalf of others in order to receive kickbacks for those confederates. Yes, I would have assigned someone to the story since he is a high profile person who allegedly sought to scheme the government out of millions of dollars. 
+
+Q5. In what percentage of all judicial districts has the U.S. Department of Justice filed cases cases against people accused of fraud related to the PPP or EIDL loan program, according to the DOJ website listing those cases: https://www.justice.gov/criminal-fraud/cares-act-fraud? In answering this question, you should also produce a list of judicial districts where DOJ has NOT filed a case, according to this site.  Note: to answer this question, you will need to scrape a table of all district courts on this up-to-date Wikipedia page under the heading "Active Courts": https://en.wikipedia.org/wiki/List_of_United_States_district_and_territorial_courts  
+A5. There are 71.2% of jurisdictions without a case. 
+
+
+```{r}
+all_active_courts_url <- "https://en.wikipedia.org/wiki/List_of_United_States_district_and_territorial_courts"
+
+all_active_courts <- all_active_courts_url %>%
+  read_html() %>% 
+  html_table()
+
+all_active_courts <- all_active_courts[[3]] %>% 
+  select(Region) %>% 
+  clean_names() %>% 
+  distinct()
+
+#%>% 
+  #nrow() = 94
+
+active_courts_without_cases <- all_active_courts %>%
+anti_join(df_specific_districts, by="region") 
+#%>%
+ # nrow() = 67
+  
+
+#67 jurisdictions without a case out of 94 total active jurisdictions: 67/94 = .712 x100 = 71.2% of jurisdictions without a case. 
+
+```
+Q6. What might explain why, according to this site, the DOJ has filed PPP-related fraud cases in less than half of the country's judicial districts?
+A6. The DOJ site says “The Task Force bolsters efforts to investigate and prosecute the most culpable domestic and international criminal actors..” so they may have only targeted higher profile cases or cases with more monetary value to recover so far. We saw from Question 4 that they went after a rapper who sought to scheme the government out of millions of dollars. Many fraudulent cases are likely a lesser dollar value and are lower in the list of priorities. Also, if they've been able to identify areas that have a higher concentration of proven fraud, they're likely to investigate certain areas with proven repeat offenders instead of places that don't have as high a concentration of proven fraud cases.
+
+Q7. Which state had the most approved PPP loans per 100,000 population? [This web page](https://dwillis.github.io/jour472files/ppp_scraping_example/index.html) has links to 52 individual web pages, one for each state (plus Washington, D.C. and Puerto Rico). Each of those web pages contains a one-row html table that has the name of the state, the number of approved loans, and the 2019 population. Here's an example for [Alabama](https://dwillis.github.io/jour472files/ppp_scraping_example/states/alabama.html). You'll need to loop over the individual state urls, scrape each individual page and combine the information on each page into a single dataframe to answer this question. Don't forget to calculation the loans per 100,000.
+A7.
+```{r}
+
+#You'll need to: 
+
+
+states_url <- "https://dwillis.github.io/jour472files/ppp_scraping_example/index.html"
+#read in the url
+
+states_list <- states_url %>% 
+  read_html() %>%
+  html_table()
+#read in the html and the tables, save it as an object
+
+df_states_list <- as.data.frame(states_list) %>%
+  clean_names() %>%
+  distinct()
+#save it as a cleaned up dataframe
+
+loans_by_state <- tibble()
+#create a tibble where you're going to store all the individual dataframes and then where you'll later combine them
+
+for (row_number in 1:nrow(df_states_list)) {
+#loop over the individual state urls
+  
+  each_row_df <- df_states_list %>%
+  slice(row_number)
+  #scrape each individual page
+  #save each state as an invididual row
+  
+  url <- each_row_df$url
+
+  state_ppp_loans <- url %>%
+    read_html() %>%
+      html_elements('tbody tr td') %>%
+      html_text()
+  
+    state_ppp_loans <- state_ppp_loans[[1]] %>%
+      clean_names() %>%
+      #slice(2) %>%
+      bind_cols(each_row_df) %>%
+      #from prelab - 
+      #mutate(nov_2021 = parse_number(nov_2021)) %>%
+      #rename(nov_2021_employees = nov_2021) %>%
+      #select(sector,description,nov_2021_employees)
+ 
+      
+# loan_data <- states_list %>%
+ # read_html() %>%
+ # html_table()
+}
+      
+  #do the [[]] to tell the loop the one to keep
+  
+  #save loans_by_state to itself and fill the tibble
+
+
+
+#and combine the information on each page into a single dataframe to answer this question (probably each_row_df into the tibble.
+  
+#Don't forget to calculation the loans per 100,000.
+
+
+#create a list
+#create a loop that goes over each state, using the prelab
+
+
+```
+
+```{r}
+
+
+##DELETE THIS!!!!!! - From Prelab - ------
+
+# Create an empty dataframe to hold results
+employment_by_sector_all <- tibble()
+
+# For loop, iterating over each row in our naics industry dataframe
+for(row_number in 1:nrow(naics_industry)) {
+
+    # Keep only the row for a given row number, get rid of every other row
+    each_row_df <- naics_industry %>%
+      slice(row_number)
+
+    # Define url of page to get
+    url <- each_row_df$sector_url
+
+    # Define id of table to ingest
+    xpath_employment_table <- paste0('//*[@id="',each_row_df$sector_xpath_id,'"]')
+
+    # Get employment table from each page by going to each url defined above, reading in the html with read_html(), extracting the table with the id generated by the xpath code using html_elements), and then turning the html into a proper dataframe using html_table().  The dataframe is in a nested list, which we'll have to extract in the next step.
+    employment_info <- url %>%
+      read_html() %>%
+      html_elements(xpath = xpath_employment_table) %>%
+      html_table()
+
+    # Grab the dataframe out of the list (it's the first and only element inside the list); clean up the field names with clean_names(); use slice(2) to keep only the second row; use bind_cols() to append the sector code and name to this table; turn jun_2021 column into a proper number, and rename it.  Then select only three columns we need.
+    employment_info <- employment_info[[1]] %>%
+      clean_names() %>%
+      slice(2) %>%
+      bind_cols(each_row_df) %>%
+      mutate(nov_2021 = parse_number(nov_2021)) %>%
+      rename(nov_2021_employees = nov_2021) %>%
+      select(sector,description,nov_2021_employees)
+
+    # Bind each individual employment info table to our employment_by_sector_all dataframe
+    employment_by_sector_all <- employment_by_sector_all %>%
+      bind_rows(employment_info)
+
+}
+
+# Display the completed dataframe
+employment_by_sector_all
+
+```
