@@ -1,0 +1,299 @@
+---
+title: "box_scores.Rmd"
+author: "Dave Andrews"
+date: "3/12//2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Chapter 15
+
+### Task 1: Load packages
+**Task** Run the following code to load packages.
+
+```{r}
+library(rvest)
+#rvest allows you to grab HTML with commands like read_html(), html_table(), etc.
+library(tidyverse)
+library(janitor)
+```
+
+Things to Automate:
+1. URL - https://www.baseball-reference.com/boxes/BAL/BAL199204200.shtml
+Url that stays the same - "https://www.baseball-reference.com/boxes/BAL/BAL",date_for_url,".shtml"
+URL that changes - YEARMMDD0.shtml
+
+2. Inning & RBI:
+If batting team = Orioles, its located in <div class>/<div>/<div id="HRhome">
+If batting team = visitor, its located in <div class>/<div>/<div id="HRvisitor">
+
+
+4. Win Loss:
+??
+
+5. Join with corresponding list of HOFers
+
+
+```{r}
+#read in list of HOFers
+hof_url <- "https://www.baseball-reference.com/awards/hof.shtml"
+
+hall_of_famers <- hof_url %>% 
+  read_html() %>%
+  html_table
+
+hall_of_famers <- hall_of_famers[[1]] %>% 
+  select(Year, Name)
+```
+
+```{r}
+#read in dataset
+eutaw_street_home_runs <- read_csv('data/eutaw_street_home_runs.csv')
+```
+
+```{r}
+#checking for HOF pitchers and batters that appear in the Eutaw Street list
+pitchers <- eutaw_street_home_runs  %>% 
+  mutate(Name = pitcher) %>% 
+  select(Name, pitcher_team) 
+  
+batters <- eutaw_street_home_runs %>% 
+    mutate(Name = batter) %>% 
+  select(Name, batter_team) 
+
+hof_pitchers_eutaw_street <- pitchers %>%
+left_join(hall_of_famers, by="Name")
+
+hof_batters_eutaw_street <- batters %>%
+left_join(hall_of_famers, by="Name")
+```
+
+```{r}
+#How to target Day/Night
+first_hr_url <- "https://www.baseball-reference.com/boxes/BAL/BAL199204200.shtml"
+
+first_hr_boxscore <- first_hr_url %>%
+  read_html() %>%
+  #html_element(xpath = '//*[@id="HRvisitor"]')
+  html_elements('div div div div div') %>%
+  html_text()
+
+day_night_first_hr_boxscore <- first_hr_boxscore[[20]]
+
+day_night_first_hr_boxscore <- as.data.frame(day_night_first_hr_boxscore)
+
+# display the html below
+day_night_first_hr_boxscore
+
+```
+
+```{r}
+#How to target visiting score
+first_hr_url <- "https://www.baseball-reference.com/boxes/BAL/BAL199204200.shtml"
+
+first_hr_boxscore <- first_hr_url %>%
+  read_html() %>%
+  #html_element(xpath = '//*[@id="HRvisitor"]')
+  html_elements('div div div div div') %>%
+  html_text()
+
+visiting_score_first_hr_boxscore <- first_hr_boxscore[[7]]
+
+visiting_score_first_hr_boxscore <- as.data.frame(visiting_score_first_hr_boxscore)
+
+# display the html below
+visiting_score_first_hr_boxscore
+
+```
+
+```{r}
+#How to target Orioles score
+first_hr_url <- "https://www.baseball-reference.com/boxes/BAL/BAL199204200.shtml"
+
+first_hr_boxscore <- first_hr_url %>%
+  read_html() %>%
+  #html_element(xpath = '//*[@id="HRvisitor"]')
+  html_elements('div div div div div') %>%
+  html_text()
+
+orioles_score_first_hr_boxscore <- first_hr_boxscore[[13]]
+
+orioles_score_first_hr_boxscore <- as.data.frame(orioles_score_first_hr_boxscore)
+
+# display the html below
+orioles_score_first_hr_boxscore
+
+```
+
+```{r}
+#Attempt to target inning and RBI
+first_hr_url <- "https://www.baseball-reference.com/boxes/BAL/BAL199204200.shtml"
+
+first_hr_boxscore <- first_hr_url %>%
+  read_html() %>%
+  #html_element(xpath = '//*[@id="HRvisitor"]')
+  html_elements('div div div div div') %>%
+  html_text()
+
+#inning_and_rbi_first_box_score <- first_hr_boxscore[[]]
+
+#inning_and_rbi_first_box_score <- as.data.frame(inning_and_rbi_first_box_score)
+
+# display the html below
+#inning_and_rbi_first_box_score
+
+```
+
+```{r}
+#attempt at loop
+
+each_game_boxscore <- tibble()
+#create a tibble where you're going to store all the individual dataframes and then where you'll later combine them
+
+for (row_number in 1:nrow(eutaw_street_home_runs)) {
+#loop over the individual state urls
+  
+  each_row_df <- eutaw_street_home_runs %>%
+  slice(row_number)
+  #scrape each individual page
+  #save each state as an invididual row
+  
+  url <- each_row_df$date_for_url
+  #define the url to pull from
+  
+  url %>% 
+  read_html() %>%
+  #html_element(xpath = '//*[@id="HRvisitor"]')
+  html_elements('div div div div div') %>%
+  html_text()
+  
+  
+
+}
+ 
+# Bind each individual employment info table to our employment_by_sector_all dataframe
+    #loans_by_state <- loans_by_state %>%
+      #bind_rows(state_ppp_loans)    
+```
+
+
+
+
+### Task 6: Examine html
+
+Nested within the `<html>` tag is the `<head>` and `<body>`, the two fundamental sections of most web pages. We're going to pull information out of the `<body>` tag in a bit.
+
+
+Now, our task is to just pull out the section of the html that contains the information we need.  
+
+But which part do we need from that mess of html code? To figure that out, we can go back to the page in a web browser like chrome, and use built in developer tools to "inspect" the html code underlying the page.  
+
+On the page, find the data we want to grab -- "Table 2. NAICS Sectors" - and right click on the word "Sector" in the column header of the table.  That will bring up a dropdown menu. Select "Inspect", which will pop up a window called the "element inspector" that shows us where different elements on the page are located, what html tags created those elements, and other info.
+
+### Task 8: Inspect element
+
+The entire table that we want of naics sectors is actually contained inside an html `<table>`. It has a header row `<thead>` that contains the column names and a `<tbody>` that contains one row `<tr>` per industry sector code.
+
+Because it's inside of a table, and not some other kind of element (like a `<div>`), rvest has a special function for easily extracting and converting html tables, called html_table(). This function extracts all six html tables on the page, only one of which we actually want.
+
+
+This gets a little complicated, but what you're seeing here is a nested list that contains six different data frames -- also called tibbles --  one for each table that exists on the web page we scraped.
+
+They're numbered 1 to 6.  The first 1 has 4 rows and 3 columns, the second has 21 rows and 2 columns, and so on.   
+
+To examine what's in each dataframe, mouse over the right edge (next to the word columns) on each row, and click the little scroll icon.  The icon will be hidden until you mouse over it.  
+
+Click on the scroll icon for the first dataframe examine it.
+
+
+That's more like it! So, all we need to do now is to store that single dataframe as an object, and get rid of the rest.  We can do that with this code, which says "keep only the second dataframe from our nested list. If we wanted to keep the third one, we'd change the number 2 to number 3.
+
+### Task 17: Run code to keep only table we want
+
+
+We now have a proper dataframe.
+
+From here, we can do a little light cleaning. Let's use clean_names() to standardize the column names.  Then let's use slice() to remove the last row -- row number 21 -- which contains source information that will complicate our use of this table later.
+
+### Task 18: Run code to do some light cleaning
+```{r}
+# Read in all html from table, store all tables on page as nested list of dataframes.
+naics_industry <- naics_url %>%
+  read_html() %>%
+  html_table()
+
+# Just keep the second dataframe in our list, standardize column headers, remove last row
+
+naics_industry <- naics_industry[[2]] %>%
+  clean_names() %>%
+  slice(-21)
+# minus means don't keep this 21st row. Literally a destructive function.
+
+# show the dataframe
+naics_industry
+
+```
+
+And there we go. We now have a nice tidy dataframe of NAICS sector codes.  
+
+We're getting very close to the finished table we showed at the beginning.  
+
+But right now, each bit of sector information is separated between 19 different dataframes.  
+
+We want them in one dataframe.  
+
+We can fix this by creating an empty dataframe called "employment_by_sector_all" using tibble(), placing it before our "for loop".
+
+And inside our "for loop" at the end, we'll bind each employment_info dataframe to the newly created empty dataframe.  
+
+### Task 35: Run code to run for loop to combine tables into a single table
+**Task** Run the following for loop combine tables into a single table. Briefly describe the output that appears below the codeblock.
+**Answer** A nice, clean 19x3 tibble with the sector code, the sector name, and the employment info.
+
+```{r}
+
+# Create an empty dataframe to hold results
+employment_by_sector_all <- tibble()
+
+# For loop, iterating over each row in our naics industry dataframe
+for(row_number in 1:nrow(naics_industry)) {
+
+    # Keep only the row for a given row number, get rid of every other row
+    each_row_df <- naics_industry %>%
+      slice(row_number)
+
+    # Define url of page to get
+    url <- each_row_df$sector_url
+
+    # Define id of table to ingest
+    xpath_employment_table <- paste0('//*[@id="',each_row_df$sector_xpath_id,'"]')
+
+    # Get employment table from each page by going to each url defined above, reading in the html with read_html(), extracting the table with the id generated by the xpath code using html_elements), and then turning the html into a proper dataframe using html_table().  The dataframe is in a nested list, which we'll have to extract in the next step.
+    employment_info <- url %>%
+      read_html() %>%
+      html_elements(xpath = xpath_employment_table) %>%
+      html_table()
+
+    # Grab the dataframe out of the list (it's the first and only element inside the list); clean up the field names with clean_names(); use slice(2) to keep only the second row; use bind_cols() to append the sector code and name to this table; turn jun_2021 column into a proper number, and rename it.  Then select only three columns we need.
+    employment_info <- employment_info[[1]] %>%
+      clean_names() %>%
+      slice(2) %>%
+      bind_cols(each_row_df) %>%
+      mutate(nov_2021 = parse_number(nov_2021)) %>%
+      rename(nov_2021_employees = nov_2021) %>%
+      select(sector,description,nov_2021_employees)
+
+    # Bind each individual employment info table to our employment_by_sector_all dataframe
+    employment_by_sector_all <- employment_by_sector_all %>%
+      bind_rows(employment_info)
+
+}
+
+# Display the completed dataframe
+employment_by_sector_all
+```
+
