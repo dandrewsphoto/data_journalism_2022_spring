@@ -157,9 +157,8 @@ pops_and_all_state_loans
 
 ```{r}
 pops_and_all_state_loans %>%
-  ggplot(fill="blue") +
-  geom_bar(aes(x=reorder(NAME,per_100k), weight=per_100k, stat="identity", fill = "#FF0000")) +
-  #I've tried with stat="identity", without it, fill = "blue", color = "blue" both color and fill = different hex values. Tried putting it in the ggplot line like all the examples have it. Even tried looking up a theme that had blue bars. No dice. Peach it is.
+  ggplot() +
+  geom_bar(aes(x=reorder(NAME,per_100k), weight=per_100k), fill = "blue") +
   theme_minimal() +
   coord_flip() + 
   #theme_economist() +
@@ -195,17 +194,15 @@ To answer those questions, make a codeblock and do the following:
 
 ```{r}
 wv_less_than_25k <- wv_ppp_loan_data %>% 
-  filter(amount < 25000) #%>% 
-  #mutate(forgiveness_amount = as.numeric(amount)) %>% (BUT this takes away all of the NA rows...)
-  #mutate(forgiveness_amount = as.double(forgiveness_amount)) %>% 
- # mutate(forgiveness_amount = case_when(
-    #forgiveness_amount == "NA" ~ "0",
+  filter(amount < 25000) %>%
+  mutate(forgiveness_amount = case_when(
+    is.na(forgiveness_amount) ~ 0,
+    TRUE ~ forgiveness_amount
+  ))
+  
+ #NOT mutate(forgiveness_amount = case_when(
+    #NOT forgiveness_amount == "NA" ~ "0",
     #TRUE ~ forgiveness_amount))
-```
-
-```{r}
-wv_less_than_25k[is.na(wv_less_than_25k)] <- 0
-#dyplr package, but this doesn't work either.
 ```
 
 ```{r}
