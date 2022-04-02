@@ -49,7 +49,7 @@ In this notebook, we are reverse engineering five sentences from the story.
 
 ### Sentence 1
 
-* **Sentence text**: [Paste in sentence to engineer here] - “The Post began tracking fatal police shootings in a database in January 2015, months after a White police officer in Ferguson, Mo., killed Michael Brown, an unarmed Black man during a confrontation. Since then, police have shot and killed about 1,000 people a year.”
+* **Sentence text**:  “The Post began tracking fatal police shootings in a database in January 2015, months after a White police officer in Ferguson, Mo., killed Michael Brown, an unarmed Black man during a confrontation. Since then, police have shot and killed about 1,000 people a year.”
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?] Yes. Grouping the dates by month and then again by year, there have been about 1,000 people fatally shot by police every year since 2015.
 
 ```{r}
@@ -69,7 +69,6 @@ fatal_police_shootings_data_year <- fatal_police_shootings_data %>%
 * **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?] We came pretty close. Instead of 77 of the 247 women noted in the sentence, we got 79/248 filtering for the conditions outlined in the sentence. We did, however, get very similar percentages, successfully illustrating the point of the sentence. We think there are a few unknowns that account for these slight variations in data. 1. We don't know if additional data was entered for this timeframe after the article was published. Perhaps more cases were added/more conditions were included that became known after the published date. 2. We don't know what specific date was used as the cutoff date when this article was published. Since it was published on 9/4/20, we figured any entries that occured on 9/4/20 itself was likely not included in the statistics. Playing around with the cutoff date as early as 9/1/20 didn't produce exact results either. Still, we were able to reproduce the overarching point of the sentence, which is that mental health was a resulting factor in about 31% of women fatally shot by police since 2015, while mental health only accounted for about 22% of the men fatally shot by police since 2015.
 
 ```{r}
-
 # Put code to reverse engineer sentence here
 fatal_police_shootings_before_article <- fatal_police_shootings_data_year %>%
   filter(date < "2020-09-04")
@@ -124,26 +123,68 @@ women_shot_since_2015 <- fatal_police_shootings_before_article %>%
 
 ### Sentence 4
 
-* **Sentence text**: [Paste in sentence to engineer here]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Sentence text**: [“Since 2015, Black women have accounted for less than 1 percent of the overall fatal shootings in cases where race was known. But within this small subset, Black women, who are 13 percent of the female population, account for 20 percent of the women shot and killed and 28 percent of the unarmed deaths”]
+
+* **Analysis summary**: The findings have changed slightly as the data increased over time since publication, but the general sentiment of the findings in the article is the same. Through the data, we were able to confirm that, from 2015 - Mid 2020, Black women accounted for .85% of all fatal shootings in cases where race was known, or less than 1% as the article states. The data provided doesn't have population figures, so we took the pretense that Black women make up 13% of the female population as a fact. We were able to confirm that Black women account for 19.35% of the women shot and killed, as the sentence says 20%. We were also able to confirm that Black women account for ___ of the unarmed deaths, or 28% as the article states. Unfortunately, we were not able to confirm that Black women account for 28% of the total unarmed deaths. Instead, we got that they only account for 1.85%. 
+
 
 ```{r}
-# Put code to reverse engineer sentence here
-
-# Display results of code below this codeblock
-
+#Part one of the sentence - "Since 2015, Black women have accounted for less than 1 percent of the overall fatal shootings in cases where race was known."
+black_females_shot <- fatal_police_shootings_before_article %>% 
+  filter(gender == "F" & race == "B")
+#number of total police shootings= 5,611
+#number of Black females shot= 48
+(48/5611)*100
+#Percentage of Black women that account for fatal police shootings: .85% (which matches the first sentence that Black women have accounted for less than 1 percent of the overall fatal shootings in cases where race was known.)
 ```
+
+```{r}
+#Part two of the sentence - "But within this small subset, Black women, (who are 13 percent of the female population,) account for 20 percent of the women shot and killed...
+women_shot_since_2015 <- fatal_police_shootings_before_article %>% 
+  filter(gender == "F")
+# women shot since 2015 = 248
+48/248*100
+#percentage of Black females shot (48) divided by the total number of women shot (248) (x100) is: 19.35%
+```
+
+```{r}
+# Part three of the sentence - "...Black women...account for 28 percent of the unarmed deaths."
+unarmed_shootings <- fatal_police_shootings_before_article %>%
+  filter(armed == "unarmed")
+#number of total unarmed shootings: 378
+blackfem_unarmed_shootings <- unarmed_shootings %>% 
+  filter(gender == "F" & race == "B")
+7/378*100
+#Percentage of Black, female, unarmed shootings (7) divided by the total number of unarmed shootings(378) (x100) is 1.85%
+
+#1.85% does not equal 28%, as claimed in the sentence.
+```
+
 
 ### Sentence 5
 
-* **Sentence text**: [Paste in sentence to engineer here]
-* **Analysis summary**: [Write up two to three sentences describing the results of your analysis.  Were you able to confirm the finding? If not, why not?]
+* **Sentence text**: [“The starkest difference between women and men is the rate: Women account for about half the population, but 4 percent of the killings. Of those fatally shot every year, about 44 have been women.”]
+* **Analysis summary**: [According to the data prior to the article's publication, 4.4 percent of those killed by police have been women, like what the article claimed. Our analysis also showed that between 2015 and 2019, an average of 44.4 women were killed each year. Though the article does include some 2020 data, the year is not complete so it does not appear it was used to calculate this number. ]
 
 ```{r}
-# Put code to reverse engineer sentence here
+#women are 4 percent of all killings 
+  women_percent <- fatal_police_shootings_before_article %>%
+  filter(gender == "F") %>%
+  summarize(
+    count = n()
+  )
+#total number of women killed: 248
+#total number of killings: 5,611
 
-# Display results of code below this codeblock
+(248/5611)*100
+# = 4.4%, confirming women account for 4% of police shootings.
 
+#44 women killed per year - 
+  women_total <- fatal_police_shootings_before_article %>%
+    filter(gender == "F") %>%
+      group_by(year) %>%
+     summarize(
+    count = n())
 ```
 
 -30-
