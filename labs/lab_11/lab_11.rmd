@@ -66,6 +66,8 @@ tot_number_loans <- total_mining_quarrying_oil_gas %>%
 summarise(total_loans = sum(count_loans))
 
 #512 total mining/quarrying/oil/gas loans
+
+tot_number_loans
 ```
 
 ```{r}
@@ -89,8 +91,19 @@ dollar_amount <- mining_quarrying_oil_gas %>%
    summarise(total_amount = sum(amount))
 
 #dollar amount = $89,495,889
+
+dollar_amount
 ```
 
+```{r}
+#total loan amount per county
+total_amounts_per_county <- mining_quarrying_oil_gas %>% 
+  group_by(project_county_name) %>%
+ summarise(total_amount = sum(amount)) %>%
+  arrange(desc(total_amount))
+
+total_amounts_per_county
+```
 
 ```{r}
 wv_county_population <- get_acs(geography = "county", 
@@ -124,27 +137,43 @@ wv_pop_and_loans_per_100k <- county_loans %>%
 wv_pop_and_loans_per_100k
 ```
 
-
-
-```{r}
-ggplot() + 
-  geom_sf(data=wv_pop_and_loans_per_100k, aes(fill=loans_per_100k)) + 
-  theme_minimal() +
-  scale_fill_viridis_b(option="magma",trans = "log") 
-```
-
-
-
 Then produce a choropleth map that shows West Virginia counties shaded according to the total amount of loans to that industry per 100,000 population.
 
-Use the magma color palette, and shade on a "log" scale. Also produce a table that shows the total amount of loans per 100,000 population for each county, ranked from highest to lowest, along with the total amount of loans and the total number of loans.
+Use the magma color palette, and shade on a "log" scale. Also produce a table that shows the total amount of loans per 100,000 population for each county, ranked from highest to lowest (done), along with the total amount of loans and the total number of loans (done).
+
+```{r}
+counties <- counties() 
+```
+```{r}
+wv_counties_map <- counties %>%
+  filter(STATEFP == "54") %>% 
+  ggplot() + 
+  geom_sf() + 
+  theme_minimal()
+
+wv_counties_map
+```
+
+```{r}
+wv_counties_map <- counties %>%
+  #trying to incorporate the full map above never produced all of the counties!
+  filter(STATEFP == "54") %>% 
+  ggplot() + 
+  geom_sf(data=wv_pop_and_loans_per_100k, aes(fill=loans_per_100k, geometry=geometry)) + 
+  theme_minimal() +
+  scale_fill_viridis_b(option="magma",trans = "log")
+  
+wv_counties_map 
+```
 
 Then answer these questions:
 
 * Based on the map, what region of the state appears to have gotten more loans in this industry? What geographic pattern do you notice in the data?
 * Based on the table, what county got the highest total loan amount? What was the total amount per 100K population, the total amount of loans (not population adjusted), how many loans were there, and what's the population?
 
-**A1.**
+**A1.** 
+
+The central part of the state around Clarksburg and Bridgeport got the most loans per 100k people, while the countries on the parameter of the state, especially bordering Virginia, got the lowest amounts. Harrison county had the most loans with 59. It also had the highest total loan amount with $9,919,762.98. The total population was 67,908, and the amount of loans per 100k was 86.88. However, ROANE county had the most loans per 100k with 40 loans for its 14,020 person population, an average of 285.36 loans per 100k.
 
 **Q2.** You want to understand WHY the spatial pattern you saw above exists.  So you grab a shapefile with the latitude and longitude coordinates of every mine permit in West Virginia from the state Department of Environmental Protection.
 
@@ -152,24 +181,84 @@ Here's the url: https://tagis.dep.wv.gov/arcgis/rest/services/WVDEP_enterprise/m
 
 (It's in a slightly different format than the .shp file in the lab. It's another type of shapefile called "geojson".  It will work just the same, though, despite that difference. You can read it directly into R without manually downloading it, by putting the url in the st_read() function we learned about in this week's prelab.)
 
+```{r}
+q2_1_mines <- st_read("https://tagis.dep.wv.gov/arcgis/rest/services/WVDEP_enterprise/mining_reclamation/MapServer/0/query?where=1%3D1&outFields=*&geometry=&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&outSR=4326&f=json")
+
+```
+
 This data includes both currently operating mines and old ones that have closed.  You want to examine only mines that have a permit expiration date after Sept. 1, 2021.
+
+```{r}
+q2_2_open_mines <- q2_1_mines %>% 
+  filter(expiredate > "2021-09-01")
+```
 
 Make a map with a point for each one of these mine permits and put a blank map with the outline of West Virginia counties (which you can get from Tigris) behind it.
 
+```{r}
+#blank wv map with datapoints
+q2_3_wv_map <- counties %>%
+  filter(STATEFP == "54") %>% 
+  ggplot() + 
+  geom_sf() + 
+  geom_sf(data=q2_2_open_mines) +
+  theme_minimal()
+
+q2_3_wv_map
+```
+
 What spatial pattern do you see? How does it compare to the spatial pattern in the first map you made?
 
-**A2.**
+**A2.** This spatial pattern is not quite what I expected from the loan breakdown in question 1. The dots are heavily concentrated in the central southwest, a much higher concentration in the northern central part of the state as the loans in question 1 would suggest. It's especially confusing in Boone County, which isn't even visible through the statter plots in question 2, but is listed in the 3rd lowest, or middle category as far as loans per 100k in question 1. 
 
 **Q3.** To confirm the spatial comparison you identified in question 2, let's create a new map that layers the mine location points on top of our PPP choropleth map we created in question 1. What do you notice about the number of mines in the county that has the highest total loan amount per 100K?
 
-**A3.**
+```{r}
+#blank wv map with datapoints
+q3_1_overlay <- counties %>%
+  filter(STATEFP == "54") %>% 
+  ggplot() + 
+  geom_sf() + 
+  geom_sf(data=wv_pop_and_loans_per_100k, aes(fill=loans_per_100k, geometry=geometry)) +
+  geom_sf(data=q2_2_open_mines) +
+  theme_minimal() +
+  scale_fill_viridis_b(option="magma",trans = "log")
+
+q3_1_overlay
+```
+
+**A3.** Roane County, which had the highest amount of loans per 100k people with 285.36 loans, seems to only have one open mine. Maybe that's the story? All the mines closed, and those people need assistance getting back to work?
 
 **Q4.** Starting from the original WV ppp dataframe, examine the loans to companies in "Mining, Quarrying, and Oil and Gas Extraction" in the county with the highest total loan amount per 100K (you can use the table you created in question 1 to identify the top county).
 
 * What single company accounts for the biggest chunk of the total loan amount?
+
+```{r}
+wv_pop_and_loans_per_100k
+
+q4_1_Roane <- mining_quarrying_oil_gas %>% 
+  filter(project_county_name == "ROANE") %>% 
+  group_by(name) %>%
+  summarise(total_amount = sum(amount)) %>%
+  arrange(desc(total_amount)
+  )
+
+q4_1_Roane
+
+#COMPLETE ENERGY SERVICES LLC	had the highest chunk of loan amount with $900,075.00	
+```
+
+```{r}
+q4_2_complete_energy <- mining_quarrying_oil_gas %>% 
+  filter(project_county_name == "ROANE") %>% 
+  filter(name == "COMPLETE ENERGY SERVICES LLC")
+```
+
+
 * What specific industry are they in, based on their 6-digit NAICS code? Look them up on the web. What services do they provide?
 * How many jobs did they save, according to the data?
 * What's your hypothesis for why a company in their specific industry would need to seek a PPP loan during the pandemic?
 
-**A4.**
+**A4.** COMPLETE ENERGY SERVICES LLC	had the highest chunk of loan amount with $900,075.00. Based on their Naics code 213112, they are "Support Activities for Oil and Gas Operations." They claim to be an oil & energy company, but their LinkedIn only has 8 employees. According to the data, they saved 49 jobs. Also, the link to their website on their linked in takes you to a sketchy ad sale website, so I'm guessing this isn't a legit company. Otherwise, I'd guess that an oil and gas company would seek PPP loans during the pandemic since more people were home, using far more utilities than they'd normally use at home and going to work for 8 hours.
+
 -30-
