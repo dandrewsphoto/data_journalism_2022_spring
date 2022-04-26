@@ -52,8 +52,7 @@ incidents_wvu <- incidents_wvu %>%
   mutate(datetime=mdy_hm(datetime)) %>% 
   mutate(incident_date=mdy(datetime)) %>% 
   mutate(incident_time=hour(datetime)) %>% 
-  mutate(day_of_week=day(datetime)) %>% 
-  arrange(desc(incident_date))
+  mutate(day_of_week=day(datetime))
 ```
 
 Then write code that will construct a paragraph about the data described above comparing the most recent data to the previous date and the most recent previous date for the same day of the week. To do that, you will need to produce:
@@ -63,16 +62,26 @@ Then write code that will construct a paragraph about the data described above c
 3. Generate a dataframe of the most recent date's incidents.
 
 ```{r}
-#calculating percentage change
+#latest date
+
 #take the last date, and take the 7 days before that date.
-latest_date <- incidents_wvu %>% slice(1)
+latest_date <- incidents_wvu %>% 
+arrange(desc(incident_date)) %>% slice(1)
 #above is a one row dataframe
 #below targets that one row dataframe with the $, and -7 is saying 7 days before it.
 one_week_ago <- incidents_wvu %>% filter(incident_date == latest_date$incident_date - 7)
-latest_date <- latest_date %>%
-  mutate(pct_change_week = (title - one_week_ago$title)/one_week_ago$title *100)
 ```
 
+```{r}
+#latest day of week
+
+#take the last date, and take the 7 days before that date.
+latest_day_of_week <- incidents_wvu %>% 
+arrange(desc(incident_date)) %>% slice(1)
+#above is a one row dataframe
+#below targets that one row dataframe with the $, and -7 is saying 7 days before it.
+one_week_ago <- incidents_wvu %>% filter(incident_date == latest_date$incident_date - 7)
+```
 
 ```{r}
 #original from prelab
@@ -112,6 +121,11 @@ To do that, you will need to:
 3. Figure out the "lowest" and "highest" Maryland zip codes.
 
 Google the top 2-3 zip codes from both Maryland and non-Maryland results and describe them in your answer.
+
+*List of MD Zip Codes*
+https://worldpopulationreview.com/zips/maryland
+
+20601 - 21930
 
 **A2.**
 
