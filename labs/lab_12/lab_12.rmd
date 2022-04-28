@@ -135,13 +135,6 @@ sub
 
 In addition, I'd look at the types of incidents that have occurred in the last 30 days, the frequency per day and if there's a pattern on certain weekdays, times and in certain buildings.
 
-```{r}
-sub <- paste("On", format(latest_day_of_week$weekday),  format(latest_date$date,  format="%B %d"),",", "there was a", format(latest_date$title),"reported on campus. A week earlier on the previous", format(latest_day_of_week$weekday), ", there were", format(n_incidents_one_week_ago$count), "incidents reported on campus. In the 30 days prior to", format(i1_one_week_ago$date,  format="%B %d"),", there had been", format(incidents_in_prior_thirty_days$count), "incidents reported on campus."
- )
-
-sub
-```
-
 **Q2.** Maryland produces a [CSV file](https://raw.githubusercontent.com/state-of-maryland/VaccineCSVs/master/Vax_ZIP_CODE_FirstSecondSingle_Totals_Raw.csv) showing the total number of vaccinations by zip code and -- interestingly -- it includes non-Maryland zip codes (as well as some zip codes that seem to be bad data). write a script that reads the CSV file, making the columns more readable and adding today's date. Then output the top 25 Maryland zip codes and top 25 non-Maryland zip codes based on number of people fully vaccinated, and write both dataframes out to CSV files, using the following name formats:
 
 Maryland zips: maryland_zips_yyyymmdd.csv
@@ -234,14 +227,13 @@ You WILL need to ensure that the columns you use to join the two dataframes are 
 
 Describe the output of the map below, and say what you think the most interesting areas are.
 
-**A3.**
+**A3.** Unfortunately my code is broken. Somehow I went from having all of the percentages of less than 50% unvaccinated counties to three columns of NA data. Not sure what happened. But But judging off of zip codes that have at least 100 vaccinations, 21641 is the lowest with 100 on the Eastern Shore. 20791 is within the beltway. 21720 is between Thurmont and Hagerstown, 20914 is just above suburban DC and 21023 is between Baltimore and the PA border. I'm guessing some of these are bad datasets since they are in more populated areas than 21641, which, being on the Eastern Shore, I'd expect to have lower vaccination rates.
 ```{r}
 acs5 <- load_variables(2020, "acs5", cache = TRUE)
 ```
 
 ```{r}
 md_zipcodes <- get_acs(geography="county", variables = "B01001_001", state='MD') %>% 
-   #rename(GEOID=zip_codes) #%>% 
   rename(zip_code=GEOID)
 
 md_zipcodes
@@ -251,12 +243,17 @@ md_vacs_and_zips <- top_md_vaccinations %>%
   left_join(md_zipcodes, by="zip_code") %>%
   mutate(percent_vacc_by_zip = (fully_vaccinated/estimate)*100)
 
+md_vacs_and_zips
+
+#!!!!!!!somehow this has turned all of my columns into NAs...they were here earlier because I even tried to filter out the bad data below!!!!!
+
 less_than_50_perc_vacc <- md_vacs_and_zips %>%
   filter(fully_vaccinated > 100) %>% 
   filter(percent_vacc_by_zip < 50) %>% 
   arrange(percent_vacc_by_zip)
 
 less_than_50_perc_vacc
+
 ```
 
 ```{r}
@@ -272,15 +269,22 @@ md_counties_map <- counties %>%
 
 md_counties_map
 ```
+```{r}
+todays_date <- md_vaccinations %>% slice(1)
+```
 
 ```{r}
 q3_1_overlay <- counties %>%
   filter(STATEFP == "24") %>% 
+  #have tried with and without this filter
   ggplot() + 
   geom_sf(data=less_than_50_perc_vacc, aes(fill=percent_vacc_by_zip)) +
   geom_sf() +
   theme_minimal() +
-  scale_fill_viridis_b(option="magma",trans = "log")
+  scale_fill_viridis_b(option="magma",trans = "log") +
+  labs(title = "Maryland Counties With Less Than 50% Fully Vaccination Rates as of", paste(format(todays_date$todays_date)))
+
+#this code either produces a blank Maryland Map or causes R to spin endlessly and crash, never producing a populated  map. 
 
 q3_1_overlay
 ```
