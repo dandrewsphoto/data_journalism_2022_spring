@@ -1,0 +1,826 @@
+---
+title: "state_profile"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## PPP State Profile
+
+Your assignment is to explore a dataset of PPP loan applications for a particular state and to answer a series of questions that will help you summarize that state's loan applications. You will need to write R code to answer those questions. You also will bring in other data, including Census information, and you will be making graphics, including maps, to illustrate your findings.
+
+The deliverable will be this R Markdown notebook and a data folder that you will receive with a state's loan application data. Place any other data you are using to answer the questions in the same data folder.
+
+## Load libraries and establish settings
+
+**Task** Create a codeblock and load appropriate packages and settings for this assignment.
+
+```{r}
+library(tidyverse)
+library(sf)
+library(janitor)
+library(tidycensus)
+library(tigris)
+library(lubridate)
+library(refinr)
+census_api_key("ab0ed8418e6554d3eb77ed342784e3bb0b002a64")#, install=TRUE)
+```
+
+```{r}
+louisiana_ppp <- read_csv("data/cleaned_louisiana_ppp.csv") %>% 
+  clean_names()
+
+glimpse(louisiana_ppp)
+
+louisiana_ppp <- louisiana_ppp %>% 
+  mutate(
+    zip5 = str_sub(zip, start=1L, end=5L),
+    id = as.character(id) ,
+    month_approved = floor_date(date_approved, "month"),
+    change_in_approval_amount = current_approval_amount - initial_approval_amount
+  ) %>% 
+#LA zips 70001 - 70726, 515 active zips
+filter(
+  zip5 > 70000,
+  zip5 < 70727)
+
+naics_codes <- read_csv('data/naics_codes.csv') %>% 
+  rename(naics_code_description=title)
+
+louisiana_ppp <- louisiana_ppp %>% 
+left_join(naics_codes, by="naics_code")
+
+```
+
+
+## Initial Exploration
+
+**Q1.**. Write R code that generates some basic descriptive statistics that allows you to describe the applications from your state. This code should produce results that describe the data in different ways: how many applications there are, along with ways to understand the typical and most frequent values for columns you find interesting or newsworthy. You should produce at least five (5) descriptive statistics and write up a summary of the data using them.
+
+#Questions to explore - 
+1. Top job industries in the data
+2. Geography of the data
+3. Top lenders
+4. Top amounts
+5. Timeframe of loan amounts
+6. How is undispersed, industries that are undispersed
+7. Top Counties
+
+```{r}
+
+total_loans <- louisiana_ppp %>% 
+  summarise(count_loans = n(),
+            total_amount = sum(amount)
+  ) 
+#135,425 loans
+# $7,791,965,051 total
+  
+average_loan_amount <- louisiana_ppp %>% 
+  summarize(
+    avgamount = mean(amount),
+    #average = 57,537.12
+    medamount = median(amount))
+    #median = 20,000
+
+#Louisiana has paid almost $7.8 billion in PPP loans over 135k loans for an average of $57.5k per loan. 
+
+#
+
+most_loans_received <- louisiana_ppp %>% 
+  group_by(name) %>%
+  summarise(
+    count_loans = n(),
+    total_loans_amount = sum(amount)
+    ) %>%
+  arrange(desc(count_loans))
+
+#IMPORTANT FINDING
+
+top1_nreceived_james_cantrelle <- louisiana_ppp %>% 
+  filter(name=="JAMES CANTRELLE II")
+#Barber Shop business, 20 loans for $364,382.24
+
+#For all individuals and businesses who received loans, JAMES CANTRELLE II received the most loans of anyone else in Louisiana with 20. Cantrelle owns various barbershops, including Just 4 Him Holdings LLC. Together, his 20 loans totaled $364,382.24 in PPP assistance. --> Also possibly a politician?
+
+#The other names on the top of the list of multiple loans were more common names, like Michael Williams or James Smith, who appear in various industries, in different zip codes, and at different addresses. They are likely multiple people with the same name.
+
+#Although it was a Barber Shop management company that got the most amount of loans, Beauty Salons got the most amount of loans of any industry. Barber Shops were 10th on the list of number of loans received per industry.
+
+top2_nreceived_michael_williams <- louisiana_ppp %>% 
+  filter(name=="MICHAEL WILLIAMS")
+#15 loans for 219177.02
+#services all over the place...? Landscaping, music industry, Taxi, Fiber Optics, Freight and Trucking, Beauty Salon, Caterers
+#from all different lender states
+#company zips in all different zip codes
+#all paid in full, no undispersed amounts
+#a lot of different lenders
+#probably differnet people...lolwhoops.
+
+top3_nreceived_james_smith <- louisiana_ppp %>% 
+  filter(name=="JAMES SMITH")
+
+top4_nreceived_minh_nguyen <- louisiana_ppp %>% 
+  filter(name=="MINH NGUYEN")
+
+top5_nreceived_phuong_nguyen <- louisiana_ppp %>% 
+  filter(name=="PHUONG NGUYEN")
+
+#
+
+most_single_loan_amount_received <- louisiana_ppp %>% 
+  group_by(name) %>% 
+  summarise(
+    count_loans = n(),
+    total_loans_amount = sum(amount)
+  ) %>%
+  arrange(desc(total_loans_amount))
+
+#1 - COIL TUBING PARTNERS LLC
+#2 loans, 12,000,000
+
+#2 - SUN INDUSTRIAL GROUP LLC
+#2 loans, 10,230,500
+
+#tied at #3 with 10,000,000 received:
+#ACME TRUCK LINE INC
+
+#BLESSEY MARINE SERVICE, INC.
+#CROSBY ENERGY SERVICES, INC.
+#DYNAMIC INDUSTRIES, INC.
+#KIPP NEW ORLEANS INC
+#UP PROFESSIONAL SOLUTIONS, LLC
+
+
+#top orgs that received or more than $10,000,000
+
+#IMPORTANT FINDING
+
+top1_amount_received_coil_tubing <- louisiana_ppp %>%
+  filter(name=="COIL TUBING PARTNERS LLC")
+#received the most money from any org or individual in the state with 2 loans totaling $12 million.
+#based in Lafayette
+#Jerry Ritter may not have a LinkedIn picture
+#opencorporates.com has their status listed as "Active Not In Good Standing For Failure To File Annual Report."
+#looks like they have subsidiaries all across the south, I'd be interested to see if their various branches got similar loans in other states as well.
+
+
+
+top2_amount_received_sun_ind_group <- louisiana_ppp %>%
+  filter(name=="SUN INDUSTRIAL GROUP LLC")
+
+top3a_amount_received_acme_truck <- louisiana_ppp %>%
+  filter(name=="ACME TRUCK LINE INC")
+
+top3b_amount_received_blessey_marine <- louisiana_ppp %>%
+  filter(name=="BLESSEY MARINE SERVICE, INC.")
+
+top3c_amount_received_crosby_energy <- louisiana_ppp %>%
+  filter(name=="CROSBY ENERGY SERVICES, INC.")
+
+top3d_amount_received_dynamic_ind <- louisiana_ppp %>%
+  filter(name=="DYNAMIC INDUSTRIES, INC.")
+
+top3e_amount_received_kipp <- louisiana_ppp %>%
+  filter(name=="KIPP NEW ORLEANS INC")
+
+top3f_amount_received_up_professional <- louisiana_ppp %>%
+  filter(name=="UP PROFESSIONAL SOLUTIONS, LLC")
+
+#IMPORTANT FINDING
+
+#top 12 amount received, "N/A 501c non profit" --> 
+
+top12_amount_received_na_nonprofit <- louisiana_ppp %>%
+  filter(name=="N/A - 501 (3) NONPROFIT")
+
+#*This is a 500 employee "Nursing Care Facilities" nonprofit that didn't have its name listed in the SBA data. It received the 12th highest loan amount in Louisiana with one loan of $9+ million.
+
+#According to the address, it is a CommCare® Corporation facility. It oversees 15 nursing homes across the state.
+
+#According to a story by The Advocate, "The state ranked 50th in patient quality of care in a recent AARP report, which noted high rates of pressure sores and antipsychotic medications."
+
+#Jim Tucker, Troy Hebert and Nick Gautreaux are among 35 past lawmakers since 2010 who became lobbyists, agency heads, legislative influencers or state board appointees. Jim Tucker, former speaker of the Louisiana House of Representatives, is now CEO of the nonprofit nursing home conglomerate CommCare Corp. Tucker pushed against legislation discouraging institutionalization of the elderly and disabled. - https://www.theadvocate.com/baton_rouge/news/politics/legislature/article_0522f27c-0254-11e9-b824-ef5b4605bb87.html
+
+#
+
+most_jobs_saved_individual_company <- louisiana_ppp %>% 
+group_by(name) %>% 
+  summarise(
+    count_loans = n(),
+    total_jobs_retained = sum(jobs_retained)
+  ) %>%
+  arrange(desc(total_jobs_retained))
+
+#1.BRIGGS MANAGEMENT INC - 976 jobs - Drinking Places (alcoholic bevs)
+#2.CLB INVESTMENTS LLC- 919 jobs - Limited-Service Restaurants
+#3.RUBY ENTERPRISES LLC - 911 jobs - Full-Service Restaurants
+#4.AIM HIRE LLC- 724 - Temporary Help Services & Employment Placement Agencies
+#5.MASSE CONTRACTING INC - 674 - Ship Building and Repairing
+
+#IMPORTANT FINDING
+
+#!!!**Three of the top 5 businesses with most jobs retained were service industry organizations. #1 was a "Drinking Places (alc bevs), followed by Limited Service Restaurants and Full Service Restaurants. #4 was a Temping Agency, and #5 was a Ship Building and Repairing.*!!!
+
+jobs_saved_view <- louisiana_ppp %>%
+  filter(name=="MASSE CONTRACTING INC")
+
+  
+most_jobs_saved_by_industry <- louisiana_ppp %>% 
+  group_by(naics_code_description) %>% 
+  summarise(
+    count_loans = n(),
+    total_jobs_retained = sum(jobs_retained)
+  ) %>%
+  arrange(desc(total_jobs_retained))
+
+#IMPORTANT FINDING
+
+#!!!!!*Keeping with the jobs retained narrative, Full-Service Restaurants had the most jobs retained by industry with almost 82,000 jobs retained. Number 2 was "oil and gas "Support Activities for Oil and Gas Operations" with 26k, 3 was Limited-Service Restaurants with 25.5k, Offices of Physicians (except Mental Health Specialists) was 4th with 20.6k, Elementary and Secondary Schools was 5th with 18k.
+
+total_jobs_retained_by_county <- louisiana_ppp %>%
+  group_by(project_county_name) %>% 
+  summarise(
+    count_loans = n(),
+    total_jobs_retained = sum(jobs_retained)
+  ) %>%
+  arrange(desc(total_jobs_retained))
+
+#1.ORLEANS - 180,255
+#2.JEFFERSON - 155,080
+#3.LAFAYETTE - 118,463
+#4.SAINT TAMMANY - 80,152
+#5.CALCASIEU - 53,991
+
+
+total_loan_amount_by_county <- louisiana_ppp %>% 
+  group_by(project_county_name) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(total_loan_amount))
+
+#1. ORLEANS - $1,578,817,577
+#2. JEFFERSON - $1,368,920,385
+#3. LAFAYETTE - $1,096,085,965
+#4. SAINT TAMMANY - $636,088,533
+#5. TERREBONNE - $478,687,666
+
+total_loans_by_county <- louisiana_ppp %>% 
+  group_by(project_county_name) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(count_loans))
+
+#1. ORLEANS - 26,379
+#2. JEFFERSON - 23,768
+#3. LAFAYETTE - 13,387
+#4. SAINT TAMMANY - 11,087
+#5. TERREBONNE - 7,376
+
+#IMPORTANT FINDING
+average_loan_amount_by_county <- louisiana_ppp %>% 
+  group_by(project_county_name) %>% 
+  summarise(
+    avgamount = mean(amount)
+  ) %>%
+  arrange(desc(avgamount))
+
+#1. VERNON - 94,914.14 --> not in the top populations, not in the top lists of number of loans received or amount of loans received per 100k.
+#2. LAFAYETTE - 81,876.89
+#3. CALCASIEU - 72,340.27
+#4. PLAQUEMINES - 67,307.68
+#5. TERREBONNE - 64,898.00
+
+vernon <- louisiana_ppp %>% 
+  filter(project_county_name=="VERNON") %>% 
+  group_by(naics_code_description) %>%
+  summarise(count_loans = n(),
+            total_loan_amount=sum(amount)
+            ) %>% 
+  arrange(desc(count_loans))
+
+#Top number of loans by industry in Vernon:
+#1. Logging (6 loans), 2. New Car Dealers (5 loans), 3. Commercial and Industrial Machinery and Equipment (except Automotive and Electronic) Repair and Maintenance (3 loans).
+
+#Top industry loan amounts in Vernon:
+#The same as the top 3 number of loan receipients above, but Commercial and Industrial Machinery and Equipment received the most with $2.4 million, New Car Dealers got $1.4 million and Logging got $643k.
+
+#IMPORTANT FINDING
+
+total_loans_by_industry <- louisiana_ppp %>% 
+  group_by(naics_code_description) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(count_loans))
+
+#1. Beauty Salons - 8528 - almost triple than the industry that received the second most loans
+#2. Full-Service Restaurants - 3133
+#3. Offices of Lawyers - 3063
+#4. All Other Personal Services - 2702
+#5. Landscaping Services - 2698
+#6. Janitorial Services - 2474
+#7. Taxi Service - 2470
+#8. Residential Remodelers - 2315
+#9. Offices of Physicians (except Mental Health Specialists) - 2243
+#10. Barber Shops - 2186
+
+
+#IMPORTANT FINDING
+
+total_loan_amount_by_industry <- louisiana_ppp %>% 
+  group_by(naics_code_description) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(total_loan_amount))
+
+#1. Full-Service Restaurants - $444,710,414
+#2. Support Activities for Oil and Gas Operations - $400,526,643
+#3. Offices of Lawyers - $258,090,946
+#4. Offices of Physicians (except Mental Health Specialists) - $207,010,461
+#5. Elementary and Secondary Schools - $166,885,748
+#6. Beauty Salons - $137,549,841
+#7. Electrical Contractors and Other Wiring Installation Contractors - $112,152,357
+#8. New Car Dealers - $108,678,864
+#9. Engineering Services - $106,710,227
+#10. Limited-Service Restaurants - $105,560,904
+
+
+most_loans_by_address <- louisiana_ppp %>% 
+  group_by(address) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(count_loans))
+
+
+most_loan_amount_by_address <- louisiana_ppp %>% 
+  group_by(address) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(total_loan_amount))
+
+
+most_loans_by_zcta5 <- louisiana_ppp %>% 
+  group_by(zip5) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(count_loans))
+
+
+most_loan_amount_by_zcta5 <- louisiana_ppp %>% 
+  group_by(zip5) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(total_loan_amount))
+
+
+most_loans_by_race <- louisiana_ppp %>% 
+  group_by(race) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(count_loans))
+
+most_loan_amount_by_race <- louisiana_ppp %>% 
+  group_by(race) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(total_loan_amount))
+
+undispersed_nloans_by_industry <- louisiana_ppp %>% 
+  filter(undisbursed_amount > 0)
+#only one in the whole state?!
+
+change_in_approval_amount_individual <- louisiana_ppp %>%
+  arrange(desc(change_in_approval_amount)) 
+  #select(name, amount, date_approved, project_county_name, lender, initial_approval_amount, current_approval_amount, change_in_approval_amount, naics_code_description)
+#i get an error code when selecting the change in approval amount
+  change_in_approval_amount_individual
+
+change_in_approval_amount_by_zip_nloans <- louisiana_ppp %>% 
+  group_by(zip5) %>% 
+  summarise(
+    count_loans = n(),
+    total_nloans_with_changed_amounts = sum(change_in_approval_amount)
+  ) %>%
+  arrange(desc(count_loans))
+  
+change_in_approval_amount_by_zip_amount <- louisiana_ppp %>%
+  group_by(zip5) %>% 
+  summarise(
+    change_in_approval_amount = sum(change_in_approval_amount)
+  ) %>%
+  arrange(desc(change_in_approval_amount))
+
+change_in_approval_amount_by_industry_amount <- louisiana_ppp %>% 
+  group_by(naics_code_description) %>% 
+  summarise(
+    count_loans = n(),
+    total_nloans_with_changed_amounts = sum(change_in_approval_amount)
+  ) %>%
+  arrange(desc(count_loans))
+  
+change_in_approval_amount_by_industry_nloans <- louisiana_ppp %>% 
+  group_by(naics_code_description) %>% 
+  summarise(
+    count_loans = n(),
+    change_in_approval_amount_by_industry = sum(change_in_approval_amount)
+  ) %>%
+  arrange(desc(change_in_approval_amount_by_industry))
+  
+#look up reasons why change in approval amount might happen 
+  
+  
+loan_amount_per_month <- louisiana_ppp %>% 
+  group_by(month_approved) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(total_loan_amount))
+  
+loan_number_per_month <- louisiana_ppp %>%
+  group_by(month_approved) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(count_loans))
+
+
+```
+
+https://www.theadvocate.com/baton_rouge/news/business/article_7be98e84-34bb-11eb-8b63-9b0185f1e377.html
+
+BATON ROUGE NEW ORLEANS ACADIANA LAKE CHARLES GAMBIT
+
+
+These industries got major 'paycheck protection' funds in Louisiana; see the list
+BY KRISTEN MOSBRUCKER | STAFF WRITER PUBLISHED DEC 2, 2020 AT 10:28 AM | UPDATED DEC 2, 2020 AT 9:10 PM Comments
+
+Advocate staff photo by LESLIE WESTBROOK -- The Dynamic Industries, Inc. facility is pictured Tuesday, October 20, 2015, at the Port of Iberia in New Iberia, La.
+
+
+More details of the Paycheck Protection Program were released late Tuesday night by the U.S. Small Business Administration after a judge ruled the records should be public.
+
+For the first time, loan amounts for businesses which were approved for at least $150,000 through the program have been released.
+
+The Paycheck Protection Program was approved during the height of the coronavirus pandemic when many state governors mandated residents should stay at home and nonessential businesses were forced to close. The goal of the program was to support small businesses and discourage mass layoffs of workers while commerce had come to a halt. 
+
+In Louisiana, there were more than $5.3 billion in loans, of at least $150,000 or more, approved for 9,000 businesses by early August. More than $7.6 billion in total loans, which includes another 68,937 loans less than $150,000 in value, were approved for businesses and organizations across the state through August.
+
+The 9,000 loans supported nearly 500,000 jobs at least through the several weeks covered by the duration of the program, according to U.S. Small Business Administration data. 
+
+The health care and social assistance industry cluster was approved for the largest number of loans, more than 1,300 across the state totaling $827 million. More than 1,100 construction companies were approved for $634 million while more than 1,000 professional, scientific and technical services businesses had $589 million carved out. 
+
+Manufacturing was allocated $552 million across more than 700 business. Mining, which includes oil and gas, had $379 million allocated across 374 companies in Louisiana. 
+
+Retail trade split $388 million among more than 750 companies while wholesale trade accounted for $282 million across more than 500 businesses while transportation and warehousing accounted for $263 million across more than 350 companies. 
+
+Businesses in accommodation and food services, which includes restaurants and hotels, split $374 million in paycheck protection money across 787 companies. 
+
+Among the ten largest loans approved, most of which were the maximum of $10 million, the energy industry was the most common. Baton Rouge-based Premium Inspection and Testing Inc., alongside John H. Carter Co. Inc. which provide services to the industrial and oil and gas businesses were both approved for $10 million each. 
+
+New Orleans-based Dynamic Industries Inc. and Lafayette-based Coil Tubing Partners LLC both received $10 million as well. Cleaning business Up Professional Solutions LLC in Kenner, transportation business Acme Truck Line Inc in Gretna, Blessey Marine Service Inc. in Harahan and Crosby Energy Services in Cut Off all were approved for $10 million as well. 
+
+Baton Rouge-based Valluzzo Companies LLC, which operates McDonalds franchises across the state, was approved for $9.9 million while Mandeville-based Offshore Energy Services was approved for $9.5 million. 
+
+Georges Enterprises LLC, which owns The Advocate | The Times-Picayune | The New Orleans Advocate | The Acadiana Advocate was approved for $188,387 while its subsidiary Capital City Press was approved for $4.6 million, according to the data released this week. 
+
+To see how the loans were carved up by industry, see the chart below. 
+
+Can't see chart below? Click here.
+
+
+
+
+**A1.** 
+
+
+## Geographic Analysis
+
+**Q2.** Write R code that examines geographic patterns for PPP loans in your state, using Census population information to calculate a per-capita figure for the state and counties and zip codes. Then, make a county map using ggplot showing the per-capita data and a zip code map showing the difference from the statewide per-capita figure. Describe the most interesting or newsworthy findings based on your exploration.
+
+```{r}
+
+#census data for state
+
+louisiana_state_population <- get_acs(geography = "state",
+              variables = "B01001_001",
+              state = "LA",
+              year = 2019)
+
+#joined with total state loans and amounts
+
+#nothing to join it by
+#louisiana_total_loans_and_amount_per_100k <- total_loans %>% 
+#left_join(louisiana_state_population, by="") %>% 
+  #mutate(state_loans_per_100k=(count_loans/population)*100000,
+         #state_loan_amount_per_100k=(total_loan_amount/population)*100000) 
+
+state_loans_per_100k<- (135425/4664362)*100000
+#2903.4
+
+state_loan_amount_per_100k <- (7791965051/4664362)*100000
+# $167,053,180.7
+
+
+
+#census data by county
+
+acs5 <- load_variables(2019, "acs5", cache = TRUE)
+
+louisiana_county_population <- get_acs(geography = "county",
+              variables = "B01001_001",
+              state = "LA",
+              year = 2019) %>% 
+  rename(fips=GEOID,
+         population=estimate,
+         original_county_name=NAME) %>% 
+  mutate(project_county_name=original_county_name,
+         project_county_name=str_to_upper(project_county_name),
+         #str_detect(project_county_name,"^ST.") ~ "SAINT",
+         #str_detect(project_county_name," PARISH, LOUISIANA") ~ "",
+         project_county_name = case_when(
+           #project_county_name == " PARISH, LOUISIANA" ~ "",
+           project_county_name == "ACADIA PARISH, LOUISIANA" ~ "ACADIA",
+           project_county_name == "ALLEN PARISH, LOUISIANA" ~ "ALLEN",
+           project_county_name == "ASCENSION PARISH, LOUISIANA" ~ "ASCENSION",
+           project_county_name == "ASSUMPTION PARISH, LOUISIANA" ~ "ASSUMPTION",
+           project_county_name == "AVOYELLES PARISH, LOUISIANA" ~ "AVOYELLES",
+           project_county_name == "BEAUREGARD PARISH, LOUISIANA" ~ "BEAUREGARD",
+           project_county_name == "BIENVILLE PARISH, LOUISIANA" ~ "BIENVILLE",
+           project_county_name == "BOSSIER PARISH, LOUISIANA" ~ "BOSSIER",
+           project_county_name == "CADDO PARISH, LOUISIANA" ~ "CADDO",
+           project_county_name == "CALCASIEU PARISH, LOUISIANA" ~ "CALCASIEU",
+           project_county_name == "CALDWELL PARISH, LOUISIANA" ~ "CALDWELL",
+           project_county_name == "CAMERON PARISH, LOUISIANA" ~ "CAMERON",
+           project_county_name == "CATAHOULA PARISH, LOUISIANA" ~ "CATAHOULA",
+           project_county_name == "CLAIBORNE PARISH, LOUISIANA" ~ "CLAIBORNE",
+           project_county_name == "CONCORDIA PARISH, LOUISIANA" ~ "CONCORDIA",
+           project_county_name == "DE SOTO PARISH, LOUISIANA" ~ "DE SOTO",
+           project_county_name == "EAST BATON ROUGE PARISH, LOUISIANA" ~ "EAST BATON ROUGE",
+           project_county_name == "EAST CARROLL PARISH, LOUISIANA" ~ "EAST CARROLL",
+           project_county_name == "EAST FELICIANA PARISH, LOUISIANA" ~ "EAST FELICIANA",
+           project_county_name == "EVANGELINE PARISH, LOUISIANA" ~ "EVANGELINE",
+           project_county_name == "FRANKLIN PARISH, LOUISIANA" ~ "FRANKLIN",
+           project_county_name == "GRANT PARISH, LOUISIANA" ~ "GRANT",
+           project_county_name == "IBERIA PARISH, LOUISIANA" ~ "IBERIA",
+           project_county_name == "IBERVILLE PARISH, LOUISIANA" ~ "IBERVILLE",
+           project_county_name == "JACKSON PARISH, LOUISIANA" ~ "JACKSON",
+           project_county_name == "JEFFERSON PARISH, LOUISIANA" ~ "JEFFERSON",
+           project_county_name == "JEFFERSON DAVIS PARISH, LOUISIANA" ~ "JEFFERSON DAVIS",
+           project_county_name == "LAFAYETTE PARISH, LOUISIANA" ~ "LAFAYETTE",
+           project_county_name == "LAFOURCHE PARISH, LOUISIANA" ~ "LAFOURCHE",
+           project_county_name == "LASALLE PARISH, LOUISIANA" ~ "LASALLE",
+           project_county_name == "LINCOLN PARISH, LOUISIANA" ~ "LINCOLN",
+           project_county_name == "LIVINGSTON PARISH, LOUISIANA" ~ "LIVINGSTON",
+           project_county_name == "MADISON PARISH, LOUISIANA" ~ "MADISON",
+           project_county_name == "MOREHOUSE PARISH, LOUISIANA" ~ "MOREHOUSE",
+           project_county_name == "NATCHITOCHES PARISH, LOUISIANA" ~ "NATCHITOCHES",
+           project_county_name == "ORLEANS PARISH, LOUISIANA" ~ "ORLEANS",
+           project_county_name == "OUACHITA PARISH, LOUISIANA" ~ "OUACHITA",
+           project_county_name == "PLAQUEMINES PARISH, LOUISIANA" ~ "PLAQUEMINES",
+           project_county_name == "POINTE COUPEE PARISH, LOUISIANA" ~ "POINTE COUPEE",
+           project_county_name == "RAPIDES PARISH, LOUISIANA" ~ "RAPIDES",
+           project_county_name == "RED RIVER PARISH, LOUISIANA" ~ "RED RIVER",
+           project_county_name == "RICHLAND PARISH, LOUISIANA" ~ "RICHLAND",
+           project_county_name == "SABINE PARISH, LOUISIANA" ~ "SABINE",
+           project_county_name == "ST. BERNARD PARISH, LOUISIANA" ~ "SAINT BERNARD",
+           project_county_name == "ST. CHARLES PARISH, LOUISIANA" ~ "SAINT CHARLES",
+           project_county_name == "ST. HELENA PARISH, LOUISIANA" ~ "SAINT HELENA",
+           project_county_name == "ST. JAMES PARISH, LOUISIANA" ~ "SAINT JAMES",
+           project_county_name == "ST. JOHN THE BAPTIST PARISH, LOUISIANA" ~ "ST JOHN THE BAPTIST",
+           project_county_name == "ST. LANDRY PARISH, LOUISIANA" ~ "SAINT LANDRY",
+           project_county_name == "ST. MARTIN PARISH, LOUISIANA" ~ "SAINT MARTIN",
+           project_county_name == "ST. MARY PARISH, LOUISIANA" ~ "SAINT MARY",
+           project_county_name == "ST. TAMMANY PARISH, LOUISIANA" ~ "SAINT TAMMANY",
+           project_county_name == "TANGIPAHOA PARISH, LOUISIANA" ~ "TANGIPAHOA",
+           project_county_name == "TENSAS PARISH, LOUISIANA" ~ "TENSAS",
+           project_county_name == "TERREBONNE PARISH, LOUISIANA" ~ "TERREBONNE",
+           project_county_name == "UNION PARISH, LOUISIANA" ~ "UNION",
+           project_county_name == "VERMILION PARISH, LOUISIANA" ~ "VERMILION",
+           project_county_name == "VERNON PARISH, LOUISIANA" ~ "VERNON",
+           project_county_name == "WASHINGTON PARISH, LOUISIANA" ~ "WASHINGTON",
+           project_county_name == "WEBSTER PARISH, LOUISIANA" ~ "WEBSTER",
+           project_county_name == "WEST BATON ROUGE PARISH, LOUISIANA" ~ "WEST BATON ROUGE",
+           project_county_name == "WEST CARROLL PARISH, LOUISIANA" ~ "WEST CARROLL",
+           project_county_name == "WEST FELICIANA PARISH, LOUISIANA" ~ "WEST FELICIANA",
+           project_county_name == "WINN PARISH, LOUISIANA" ~ "WINN",
+           TRUE ~ project_county_name)
+         )
+
+county_population_rank <- louisiana_county_population %>% 
+  arrange(desc(population))
+
+
+louisiana_counties_pop_and_nloans <- total_loans_by_county %>% 
+left_join(louisiana_county_population, by="project_county_name") %>% 
+  mutate(county_loans_per_100k=(count_loans/population)*100000,
+         county_loan_amount_per_100k=(total_loan_amount/population)*100000) %>% 
+  arrange(desc(county_loans_per_100k)) %>% 
+  head(36)
+
+louisiana_counties_pop_and_loan_amount <- total_loans_by_county %>% 
+left_join(louisiana_county_population, by="project_county_name") %>% 
+  mutate(county_loans_per_100k=(count_loans/population)*100000,
+         county_loan_amount_per_100k=(total_loan_amount/population)*100000) %>% 
+  arrange(desc(county_loan_amount_per_100k)) %>% 
+  head(36)
+
+
+
+#census data for zips
+
+louisiana_zcta_population <- get_acs(geography = "zcta",
+              variables = "B01001_001",
+              state = "LA",
+              year = 2019) %>% 
+  rename(zip5=GEOID,
+         population=estimate) %>% 
+  select(zip5, population)
+
+#!!!! THIS PULL DOESNT HAVE POP DATA FOR 2 ZIP CODES IN ORLEANS PARISH! MAJOR DATA LOSS
+
+louisiana_zips_pop_and_nloans <- most_loans_by_zcta5 %>% 
+  left_join(louisiana_zcta_population , by="zip5") %>% 
+  mutate(zip_nloans_per_100k=(count_loans/population)*100000,
+         zip_loan_amount_per_100k=(total_loan_amount/population)*100000) %>%
+  arrange(desc(zip_nloans_per_100k))
+
+louisiana_zips_pop_and_loan_amount <- most_loans_by_zcta5 %>% 
+  left_join(louisiana_zcta_population , by="zip5") %>% 
+  mutate(zip_nloans_per_100k=(count_loans/population)*100000,
+         zip_loan_amount_per_100k=(total_loan_amount/population)*100000) %>%
+  arrange(desc(zip_loan_amount_per_100k))
+```
+
+
+
+```{r}
+#county map loan amount per 100k
+counties <- counties() 
+
+la_counties_map <- counties %>%
+  filter(STATEFP == "22") %>% 
+  ggplot() + 
+  geom_sf(data=louisiana_counties_pop_and_loan_amount, aes(fill=county_loan_amount_per_100k, geometry=fips)) + 
+  theme_minimal() +
+  scale_fill_viridis_b(option="magma",trans = "log") 
+
+la_counties_map
+```
+
+
+#Findings:
+
+State Totals:
+2903.4 loans per 100k, $167,053,180.7 in loans per 100k.
+
+Top 5 most populated counties:
+1.East Baton Rouge - 443763
+2. Jefferson - 434850
+3. Orleans - 390845
+4. St. Tammany - 255155
+5. Caddo - 245831
+(6 is Lafayette - 241973)
+
+Top 5 number of loans per 100k per county:
+1. Saint Helena
+2. Orleans
+3. Terrebonne
+4. Saint Mary
+5. St John The Baptist
+(Lafayette) #6, which makes sense since its the 6th most populated county
+
+Top 5 loan amounts per 100k per county:
+1. Lafayette
+2. Terrebonne
+3. Orleans
+4. Saint Mary
+5. Plaquemines
+
+--> Orleans Parish is the #3 most populated parish, and is #2 with number of loans received per 100k and #3 loan amount received per 100k.
+
+--> *As the most populated county/parish, East Baton Rouge Parish isn't in the top 5 for loans received or amount received per 100k. Same with the other 4 in the top 5 most populated counties other than Orleans. Interestingly though, Lafayette, the #6 most populated parish, is #6 for most number of loans received per 100k.*
+
+--> 
+
+Top 5 number of loans per 100k per zip code*:
+1. 70112 - 30,870.62 - New Orleans, Orleans Parish
+2. 70340 - 23,809.52 - Amelia, St Mary Parish
+3. 70130 - 17,415.58 - New Orleans, Orleans Parish
+4. 70375 - 15,217.39 - Mathews, Lafourche Parish
+5. 70516 - 13,793.10 - Branch, Acadia Parish
+
+Top 5 loan amounts per 100k per zip code*:
+1. 70112 - $4,440,849,189 - New Orleans, Orleans Parish
+2. 70340 - $3,629,056,026 - Amelia, St Mary Parish
+3. 70130 - $2,735,369,981 - New Orleans, Orleans Parish
+4. 70518 - $1,505,194,064 - Broussard, Lafayette Parish
+5. 70002 - $1,241,015,817 - Metairie, Jefferson Parish
+
+--> Top 3 zip codes in both loan number and loan amounts were the same.
+
+* Census data didn't pull population data for 5 zctas, including two that appear to be in New Orleans and have a hefty loan amount.
+
+
+
+
+**A2.** 
+
+## Lender Analysis
+
+**Q3.** Write R code to examine which lenders had the most approved applications in your state (and include summary statistics such as total amount and average loan amount). Generate dataframes that show the number and total amount of all loans and undisbursed loans per lender. For those lenders who had any undisbursed loans, make a graphic showing the relationship between the total amount of loans and the total undisbursed amount. Describe the most noticeable outlier lenders on that graphic below.
+
+```{r}
+top_lenders_most_loans <- louisiana_ppp %>% 
+  group_by(lender) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(count_loans))
+
+top_lenders_most_loan_amount <- louisiana_ppp %>% 
+  group_by(lender) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(total_loan_amount))
+
+hancock <- louisiana_ppp %>% 
+  filter(lender=="Hancock Whitney Bank") %>% 
+  group_by(naics_code_description) %>% 
+  summarise(total_loan_amount=sum(amount)) %>%
+  arrange(desc(total_loan_amount))
+```
+
+**A3.** 
+Lenders with the most loans issued:
+1. Prestamos CDFI, LLC - 13,234
+2. Hancock Whitney Bank - 10,453
+3. Capital Plus Financial, LLC - 10,396
+4. First Horizon Bank - 6,782
+5. Harvest Small Business Finance, LLC - 5,731
+6. JPMorgan Chase Bank, National Association - 5,261
+7. Benworth Capital - 5,044
+8. Cross River Bank - 4,244
+9. Home Bank, National Association - 4,013
+10. BSD Capital, LLC dba Lendistry - 3,349
+
+Lenders with the most loan amount totaled issued:
+1. Hancock Whitney Bank - $1,604,344,806
+2. First Horizon Bank - $606,935,853
+3. JPMorgan Chase Bank, National Association - $597,232,418
+4. Home Bank, National Association - $319,219,803
+5. b1BANK - $296,015,405
+6. Gulf Coast Bank and Trust Company - $274,550,077
+7. Fidelity Bank - $219,707,223
+8. Prestamos CDFI, LLC - $219,408,809
+9. Regions Bank - $209,515,721
+10. Capital Plus Financial, LLC - $171,999,386
+
+Hancock Whitney Bank, the leading lender of total loan amount, gave the most money to Full-Service Restaurants with $135 million, followed second by Support Activities for Oil and Gas Operations with $119 million, then Offices and Lawyers with $78 million, Elementary and Secondary Schools fourth with $45 million, and Offices of Physicians (except Mental Health Specialists) rounding out the top 5 with $41 million. This basically follows the trend of which industries got the most PPP dollars statewide so that makes sense coming from the top lender of dollar amount.
+
+
+## Industry Analysis
+
+**Q4.** Write R code that examines industry patterns for PPP loans in your state, using the NAICS codes from the PPP data as a starting point. Generate statewide and county industry totals, then join that with 2018-19 data from the [Census County Business Patterns survey](https://www2.census.gov/programs-surveys/cbp/datasets/2019/cbp19co.zip) using 6-digit NAICS codes. The documentation explaining that data can be found here: https://www2.census.gov/programs-surveys/cbp/technical-documentation/records-layouts/2018_record_layouts/county-layout-2018.txt. To do this, you will need to add FIPS codes to your PPP dataset.
+
+Does the distribution of PPP applications by the top 10 industries (by number of applications) roughly match the number of businesses reported in the Census data? Does it roughly match if you remove self-employed individuals and sole proprietorships from the PPP totals? Write up a summary of what you've found and whether there are potentially newsworthy patterns in the data.
+
+Create a county-level map showing the differences between the PPP applications and the Census business data for one of the top 10 industry codes. You can do this either using ggplot or Datawrapper (if the latter, publish that map and include the URL below).
+
+**A4.** 
+
+## Summary
+
+**Q5.** What is the most promising story idea that you have found during this exploration? How would you approach reporting it out and what other information/data would you need to do that? What would be the minimum story you could get from this, and what would be the maximum story?
+
+**A5.**
+
+
+
+
+
