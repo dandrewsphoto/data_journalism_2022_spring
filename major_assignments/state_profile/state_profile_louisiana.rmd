@@ -25,6 +25,7 @@ library(tidycensus)
 library(tigris)
 library(lubridate)
 library(refinr)
+library(ggthemes)
 census_api_key("ab0ed8418e6554d3eb77ed342784e3bb0b002a64")#, install=TRUE)
 ```
 
@@ -362,6 +363,12 @@ most_loans_by_address <- louisiana_ppp %>%
   ) %>%
   arrange(desc(count_loans))
 
+decatur_st <- louisiana_ppp %>% 
+filter(address=="311 DECATUR ST")
+decatur_st
+
+#311 Decatur St is a traditional New Orleans 4 story row home-style office building in the French Quarter. Googling the address primarily brings up Creole Cuisine Restaurant, but usually doesn't mention any of the other 30 LLCs that are listed at that address. I'd do a deeper dive into the other orgs at the very least. 
+
 
 most_loan_amount_by_address <- louisiana_ppp %>% 
   group_by(address) %>% 
@@ -371,6 +378,10 @@ most_loan_amount_by_address <- louisiana_ppp %>%
   ) %>%
   arrange(desc(total_loan_amount))
 
+main_st_14090 <- louisiana_ppp %>% 
+  filter(address=="14090 MAIN ST")
+
+#14090 Main Street was the single address that received the most loan amount total in the state. It received two loans for two different "Crude Petroleum Extraction" orgs, one to C & D WIRELINE, LLC for $1.4 million and one to CROSBY ENERGY SERVICES, INC. for 10 million. This tracks, as Crosby Energy was tied for 3rd most total loan amount received in the state.
 
 most_loans_by_zcta5 <- louisiana_ppp %>% 
   group_by(zip5) %>% 
@@ -406,6 +417,19 @@ most_loan_amount_by_race <- louisiana_ppp %>%
   ) %>%
   arrange(desc(total_loan_amount))
 
+#IMPORTANT FINDING:
+
+#"Unanswered" was the race that received the most loans and highest loan amount by far. 
+
+#1. Unanswered, 91830 loans, $6,275,336,746
+#2. White, 13778 loans, $839,767,059
+#3. Black or African American, 25230 loans, $478,875,239
+#4. American Indian or Alaska Native, 2437 loans, $129,447,229
+#5. Asian, 2108 loans, $67,081,105
+#6. Native Hawaiian or Other Pacific Islander, 40 loans, $1,448,590
+#7. Puerto Rican, 2 loans, $9,083
+
+
 undispersed_nloans_by_industry <- louisiana_ppp %>% 
   filter(undisbursed_amount > 0)
 #only one in the whole state?!
@@ -415,7 +439,37 @@ change_in_approval_amount_individual <- louisiana_ppp %>%
   #select(name, amount, date_approved, project_county_name, lender, initial_approval_amount, current_approval_amount, change_in_approval_amount, naics_code_description)
 #i get an error code when selecting the change in approval amount
   change_in_approval_amount_individual
+  
+#MEITEC INC. | change amount: $3,220,532
+#Electrical Contractors and Other Wiring Installation
+#total amt: 5,220,532
 
+#ADAMS AND REESE LLP | change amount: $2,936,700
+#Offices of Lawyers
+#total amt: $9,165,000
+
+#NVI LLC | change amount: $986,308
+#Testing Laboratories
+#total amount: $7,577,250
+
+#BORDELON MARINE HOLDING, LLC | change amount: $921,757
+#Support Activities for Oil and Gas Operations
+#total amount: $550,375
+
+#LIUZZA PRODUCE FARM, INC | change amount: $777,655
+#Other Vegetable (except Potato) and Melon Farming
+#total amount: $985,814 
+  
+#Why you might request an increase in amount, from https://bench.co/blog/operations/how-to-request-increase-ppp-amount/:
+
+
+#You did not take the full PPP loan amount you were offered believing you could not use it all
+#You gave back a portion of the PPP loan amount believing you could not use it all
+#You applied using guidance that was revised making you eligible for a larger amount than you received
+  
+#It appears more common than I originally thought, so maybe its not worth doing a deep dive. 
+
+  
 change_in_approval_amount_by_zip_nloans <- louisiana_ppp %>% 
   group_by(zip5) %>% 
   summarise(
@@ -431,23 +485,47 @@ change_in_approval_amount_by_zip_amount <- louisiana_ppp %>%
   ) %>%
   arrange(desc(change_in_approval_amount))
 
-change_in_approval_amount_by_industry_amount <- louisiana_ppp %>% 
-  group_by(naics_code_description) %>% 
-  summarise(
-    count_loans = n(),
-    total_nloans_with_changed_amounts = sum(change_in_approval_amount)
-  ) %>%
-  arrange(desc(count_loans))
+#IMPORTANT FINDING
+
+#Zips that got the highest change in approval amount:
+#1. 70002: (Metairie, Jefferson Parish) - $4,011,103.91
+#2. 70139: (New Orleans, Orleans Parish) - 3,458,679.00
+#3. 70163: (New Orleans, Orleans Parish) - $1,163,178.76
+#4. 70422: (Montpelier, St. Helena Parish) - $1,077,648.03
+#5. 70112: (New Orleans, Orleans Parish) - $972,521.79
+
+#Zips that got the initial approval amount reversed to a lower total:
+#1. 70518: (Broussard, Lafayette Parish) - $-1,512,437.67
+#2. 70001: (Metairie, Jefferson Parish) - $-1,499,328.15
+#3. 70722: (Clinton, East Feliciana Parish) - $-1,364,549.50
+#4. 70124: (New Orleans, Orleans Parish) - $-971,140.83
+#5. 70119: (New Orleans, Orleans Parish) - $-680,149.24
+
+#Highest positive change amount zips are urban, highest negative change amount zips are a mix of urban and rural. Metairie, Jefferson Parish appears in the top 2 of both the most positive change amount and most negative change amount, and New Orleans accounts for 5 of the 10 zips on each end of the spectrum.
   
-change_in_approval_amount_by_industry_nloans <- louisiana_ppp %>% 
+change_in_approval_amount_by_industry <- louisiana_ppp %>% 
   group_by(naics_code_description) %>% 
   summarise(
-    count_loans = n(),
     change_in_approval_amount_by_industry = sum(change_in_approval_amount)
   ) %>%
   arrange(desc(change_in_approval_amount_by_industry))
-  
-#look up reasons why change in approval amount might happen 
+
+#Highest positive approval amount changes by industry:
+#1. Offices of Lawyers - $8,392,041.80
+#2. Electrical Contractors and Other Wiring Installation Contractors - $3,706,229.07
+#3. Testing Laboratories - $982,855.46
+#4. Other Vegetable (except Potato) and Melon Farming - $777,654.50
+#5. Surveying and Mapping (except Geophysical) Services - $566,242.60
+
+#MAJOR FINDING:
+
+#Highest negative approval amount changes by industry:
+#1. Freestanding Ambulatory Surgical and Emergency Centers: $-1,994,404.83
+#2. Other Activities Related to Real Estate: $-1,185,809.91
+#3. Temporary Help Services: $-1,044,917.94
+#4. Elementary and Secondary Schools: $-1,011,022.70
+#5. Pipeline Transportation of Crude Oil: $-834,818.00
+#6. Drinking Places (Alcoholic Beverages): $-768,232.23
   
   
 loan_amount_per_month <- louisiana_ppp %>% 
@@ -457,63 +535,227 @@ loan_amount_per_month <- louisiana_ppp %>%
     total_loan_amount = sum(amount)
   ) %>%
   arrange(desc(total_loan_amount))
+
+#Loan Amount per month:
+
+#1. Apr 2020: $4,055,253,337
+#2. Jan 2021: $778,830,009
+#3. Feb 2201: $772,134,929
+#4. Mar 2021: $657,655,239
+#5. Apr 2021: $540,897,307
+#6. May 2020: $496,046,180
+#7. May 2021: $320,663,756
+#8. Jun 2020: $91,330,965
+#9. Jul 2020: $43,820,029
+#10. Aug 2020: $28,693,411
+#11. Jun 2021: $6,639,889
+
   
 loan_number_per_month <- louisiana_ppp %>%
   group_by(month_approved) %>% 
   summarise(
-    count_loans = n(),
-    total_loan_amount = sum(amount)
+    count_loans = n()
   ) %>%
   arrange(desc(count_loans))
 
+#Number of loans per month
+
+#1. Apr 2020: 29577
+#2. Apr 2021: 29162
+#3. May 2021: 18784
+#4. Mar 2021: 18739
+#5. May 2020: 12020
+#6. Feb 2021: 11874
+#7. Jan 2021: 7578
+#8. Jun 2020: 4459
+#9. Jul 2020: 2081
+#10. Aug 2020: 1107
+#11. Jun 2021: 44
+
+#IMPORTANT FINDING:
+
+#2021 seems like the real story here. April 2020 saw the most loans and loan amount, but Jan 2021 had the second most loan amount and April 2021, a year after everything first shut down, had the second most loans. In fact, there were more months in 2021 in the top 5 of both loan numbers and loan amounts than in 2020. That just shows how deep the ecomonic impact was that businesses were still seeking federal assistance more than a year after businesses were shut down while vaccines were just starting to be widely available.
 
 ```
 
-https://www.theadvocate.com/baton_rouge/news/business/article_7be98e84-34bb-11eb-8b63-9b0185f1e377.html
-
-BATON ROUGE NEW ORLEANS ACADIANA LAKE CHARLES GAMBIT
-
-
-These industries got major 'paycheck protection' funds in Louisiana; see the list
-BY KRISTEN MOSBRUCKER | STAFF WRITER PUBLISHED DEC 2, 2020 AT 10:28 AM | UPDATED DEC 2, 2020 AT 9:10 PM Comments
-
-Advocate staff photo by LESLIE WESTBROOK -- The Dynamic Industries, Inc. facility is pictured Tuesday, October 20, 2015, at the Port of Iberia in New Iberia, La.
-
-
-More details of the Paycheck Protection Program were released late Tuesday night by the U.S. Small Business Administration after a judge ruled the records should be public.
-
-For the first time, loan amounts for businesses which were approved for at least $150,000 through the program have been released.
-
-The Paycheck Protection Program was approved during the height of the coronavirus pandemic when many state governors mandated residents should stay at home and nonessential businesses were forced to close. The goal of the program was to support small businesses and discourage mass layoffs of workers while commerce had come to a halt. 
-
-In Louisiana, there were more than $5.3 billion in loans, of at least $150,000 or more, approved for 9,000 businesses by early August. More than $7.6 billion in total loans, which includes another 68,937 loans less than $150,000 in value, were approved for businesses and organizations across the state through August.
-
-The 9,000 loans supported nearly 500,000 jobs at least through the several weeks covered by the duration of the program, according to U.S. Small Business Administration data. 
-
-The health care and social assistance industry cluster was approved for the largest number of loans, more than 1,300 across the state totaling $827 million. More than 1,100 construction companies were approved for $634 million while more than 1,000 professional, scientific and technical services businesses had $589 million carved out. 
-
-Manufacturing was allocated $552 million across more than 700 business. Mining, which includes oil and gas, had $379 million allocated across 374 companies in Louisiana. 
-
-Retail trade split $388 million among more than 750 companies while wholesale trade accounted for $282 million across more than 500 businesses while transportation and warehousing accounted for $263 million across more than 350 companies. 
-
-Businesses in accommodation and food services, which includes restaurants and hotels, split $374 million in paycheck protection money across 787 companies. 
-
-Among the ten largest loans approved, most of which were the maximum of $10 million, the energy industry was the most common. Baton Rouge-based Premium Inspection and Testing Inc., alongside John H. Carter Co. Inc. which provide services to the industrial and oil and gas businesses were both approved for $10 million each. 
-
-New Orleans-based Dynamic Industries Inc. and Lafayette-based Coil Tubing Partners LLC both received $10 million as well. Cleaning business Up Professional Solutions LLC in Kenner, transportation business Acme Truck Line Inc in Gretna, Blessey Marine Service Inc. in Harahan and Crosby Energy Services in Cut Off all were approved for $10 million as well. 
-
-Baton Rouge-based Valluzzo Companies LLC, which operates McDonalds franchises across the state, was approved for $9.9 million while Mandeville-based Offshore Energy Services was approved for $9.5 million. 
-
-Georges Enterprises LLC, which owns The Advocate | The Times-Picayune | The New Orleans Advocate | The Acadiana Advocate was approved for $188,387 while its subsidiary Capital City Press was approved for $4.6 million, according to the data released this week. 
-
-To see how the loans were carved up by industry, see the chart below. 
-
-Can't see chart below? Click here.
-
-
-
-
 **A1.** 
+Louisiana has paid almost $7.8 billion in PPP loans over 135k loans for an average of $57.5k per loan. 
+
+Most Loans Received:
+
+For all individuals and businesses who received loans, JAMES CANTRELLE II received the most loans of anyone else in Louisiana with 20. Cantrelle owns various barbershops, including Just 4 Him Holdings LLC. Together, his 20 loans totaled $364,382.24 in PPP assistance. Cantrelle is the son of former Lafourche Parish President Jimmy Cantrelle and ran for office himself as a Republican for the District 54 seat of the Louisiana State House of Representatives in July 2020. He came in second with just 19% of the votes.
+
+The other names on the top of the list of multiple loans were more common names, like Michael Williams or James Smith, who appear in various industries, in different zip codes, and at different addresses. They are likely multiple people with the same name.
+
+Although it was a Barber Shop management company that got the most amount of loans, Beauty Salons got the most amount of loans of any industry. Barber Shops were 10th on the list of number of loans received per industry.
+
+Most Loan Amount Received:
+
+COIL TUBING PARTNERS LLC was the org that received the most money in Louisiana with 2 loans that totaled $12,000,000. They are a Lafayette-based "Support Activities for Oil and Gas Operations" company, which tracks with Oil and Gas orgs dominating the top 10 list of most loan amounts received. The CEO Jerry Ritter may not have a LinkedIn picture, which is surprising for the org that received the most loans in the entire state. Opencorporates.com has the company's status listed as "Active Not In Good Standing For Failure To File Annual Report." It looks like they have subsidiaries all across the south, I'd be interested to see if their various branches got similar loans in other states as well.
+
+The 12th most loan amount was listed as "N/A - 501 (3) NONPROFIT". This is a 500 employee "Nursing Care Facilities" nonprofit that didn't have its name listed in the SBA data. It received the 12th highest loan amount in Louisiana with one loan of $9+ million. According to the address, it is a CommCare® Corporation facility. It oversees 15 nursing homes across the state. According to a story by The Advocate, "The state ranked 50th in patient quality of care in a recent AARP report, which noted high rates of pressure sores and antipsychotic medications." Jim Tucker, Troy Hebert and Nick Gautreaux are among 35 past lawmakers since 2010 who became lobbyists, agency heads, legislative influencers or state board appointees. Jim Tucker, former speaker of the Louisiana House of Representatives, is now CEO of the nonprofit nursing home conglomerate CommCare Corp. Tucker pushed against legislation discouraging institutionalization of the elderly and disabled. - https://www.theadvocate.com/baton_rouge/news/politics/legislature/article_0522f27c-0254-11e9-b824-ef5b4605bb87.html
+
+Most Jobs Saved:
+
+Three of the top 5 businesses with most jobs retained were service industry organizations. #1 was a "Drinking Places (alc bevs), followed by Limited Service Restaurants and Full Service Restaurants. #4 was a Temping Agency, and #5 was a Ship Building and Repairing. This makes perfect sense as restaurants and bars were struggling during the pandemic, along with temping agencies who were likely overwhelmed with requests as people were out of jobs.
+
+Keeping with the jobs retained narrative, Full-Service Restaurants had the most jobs retained by industry with almost 82,000 jobs retained. Number 2 was "Support Activities for Oil and Gas Operations" with 26k, 3 was Limited-Service Restaurants with 25.5k, Offices of Physicians (except Mental Health Specialists) was 4th with 20.6k, Elementary and Secondary Schools was 5th with 18k. So as restaurants were struggling, Oil and Gas companies were right there with them with jobs retained, even more than Elementary and Secondary Schools. We'll see later that Elementary and Secondary Schools were among the industries that experienced the most change in loan approval amount, and received one of the highest rates of negative change in approval amount by industry.
+
+
+Total Jobs arranged by county:
+
+1.ORLEANS - 180,255
+2.JEFFERSON - 155,080
+3.LAFAYETTE - 118,463
+4.SAINT TAMMANY - 80,152
+5.CALCASIEU - 53,991
+
+Total number of loans by county:
+
+1. ORLEANS - 26,379
+2. JEFFERSON - 23,768
+3. LAFAYETTE - 13,387
+4. SAINT TAMMANY - 11,087
+5. TERREBONNE - 7,376
+
+Total Loan Amounts by county:
+
+#1. ORLEANS - $1,578,817,577
+#2. JEFFERSON - $1,368,920,385
+#3. LAFAYETTE - $1,096,085,965
+#4. SAINT TAMMANY - $636,088,533
+#5. TERREBONNE - $478,687,666
+
+vs. Most Populated counties:
+1. East Baton Rouge
+2. Jefferson Parish
+3. Orleans Parish
+4. St. Tammany Parish
+5. Caddo Parish
+
+So kind of interesting that jobs saved per county doesn't exactly match up with population rank.
+
+Average Loan Amount by County:
+
+1. VERNON - 94,914.14 --> not in the top populations, not in the top lists of number of loans received or amount of loans received per 100k.
+2. LAFAYETTE - 81,876.89
+3. CALCASIEU - 72,340.27
+4. PLAQUEMINES - 67,307.68
+5. TERREBONNE - 64,898.00
+
+Top number of loans by industry in Vernon:
+1. Logging (6 loans), 2. New Car Dealers (5 loans), 3. Commercial and Industrial Machinery and Equipment (except Automotive and Electronic) Repair and Maintenance (3 loans).
+
+Top industry loan amounts in Vernon:
+The same as the top 3 number of loan receipients above, but Commercial and Industrial Machinery and Equipment received the most with $2.4 million, New Car Dealers got $1.4 million and Logging got $643k.
+
+Vernon just seems to be an interesting outlier to make the top average loan amount by county.
+
+
+Total Number of Loans by industry:
+1. Beauty Salons - 8528 - almost triple than the industry that received the second most loans
+2. Full-Service Restaurants - 3133
+3. Offices of Lawyers - 3063
+4. All Other Personal Services - 2702
+5. Landscaping Services - 2698
+6. Janitorial Services - 2474
+7. Taxi Service - 2470
+8. Residential Remodelers - 2315
+9. Offices of Physicians (except Mental Health Specialists) - 2243
+10. Barber Shops - 2186
+
+
+Top Loan Amount by industry:
+1. Full-Service Restaurants - $444,710,414
+2. Support Activities for Oil and Gas Operations - $400,526,643
+3. Offices of Lawyers - $258,090,946
+4. Offices of Physicians (except Mental Health Specialists) - $207,010,461
+5. Elementary and Secondary Schools - $166,885,748
+6. Beauty Salons - $137,549,841
+7. Electrical Contractors and Other Wiring Installation Contractors - $112,152,357
+8. New Car Dealers - $108,678,864
+9. Engineering Services - $106,710,227
+10. Limited-Service Restaurants - $105,560,904
+
+
+Most loans by address:
+311 Decatur St received the most loans by a single address. It is a traditional New Orleans 4 story row home-style office building in the French Quarter. Googling the address primarily brings up Creole Cuisine Restaurant, but usually doesn't mention any of the other 30 LLCs that are listed at that address. I'd do a deeper dive into the other orgs at the very least. 
+
+Most loan amount by address:
+14090 Main Street was the single address that received the most loan amount total in the state. It received two loans for two different "Crude Petroleum Extraction" orgs, one to C & D WIRELINE, LLC for $1.4 million and one to CROSBY ENERGY SERVICES, INC. for 10 million. This tracks, as Crosby Energy was tied for 3rd most total loan amount received in the state.
+
+
+Most loans by race:
+"Unanswered" was the race that received the most loans and highest loan amount by far. 
+
+1. Unanswered, 91830 loans, $6,275,336,746
+2. White, 13778 loans, $839,767,059
+3. Black or African American, 25230 loans, $478,875,239
+4. American Indian or Alaska Native, 2437 loans, $129,447,229
+5. Asian, 2108 loans, $67,081,105
+6. Native Hawaiian or Other Pacific Islander, 40 loans, $1,448,590
+7. Puerto Rican, 2 loans, $9,083
+
+
+Change in approval amounts:
+
+MEITEC INC., a Electrical Contractors and Other Wiring Installation org got the most changed loan amount from its initial approval amount, an increase of $3,220,532 for a total loan amount of $5,220,532. It appears that change in approval amounts was more common than I thought for various logicistal reasons, so I might not do as much of a deep dive into single businesses as I originally thought.
+
+Instead, I would be interested in change approval rate trends by zip code and by industry.
+
+The highest positive change amount zips are urban, highest negative change amount zips are a mix of urban and rural. Metairie, Jefferson Parish appears in the top 2 of both the most positive change amount and most negative change amount, and New Orleans accounts for 5 of the 10 zips on each end of the spectrum.
+
+Highest positive approval amount changes by industry:
+1. Offices of Lawyers - $8,392,041.80
+2. Electrical Contractors and Other Wiring Installation Contractors - $3,706,229.07
+3. Testing Laboratories - $982,855.46
+4. Other Vegetable (except Potato) and Melon Farming - $777,654.50
+5. Surveying and Mapping (except Geophysical) Services - $566,242.60
+
+Why did lawyers suddenly need a bump in funding from what they were originally approved? Testing Laboratories I'd guess would make sense as the race for the vaccine was on worldwide.
+
+
+Highest negative approval amount changes by industry:
+1. Freestanding Ambulatory Surgical and Emergency Centers: $-1,994,404.83
+2. Other Activities Related to Real Estate: $-1,185,809.91
+3. Temporary Help Services: $-1,044,917.94
+4. Elementary and Secondary Schools: $-1,011,022.70
+5. Pipeline Transportation of Crude Oil: $-834,818.00
+6. Drinking Places (Alcoholic Beverages): $-768,232.23
+
+Elementary and Secondary Schools at #4 negative change in approval amount!
+
+
+Loans approved by month:
+
+1. Apr 2020: 29577
+2. Apr 2021: 29162
+3. May 2021: 18784
+4. Mar 2021: 18739
+5. May 2020: 12020
+6. Feb 2021: 11874
+7. Jan 2021: 7578
+8. Jun 2020: 4459
+9. Jul 2020: 2081
+10. Aug 2020: 1107
+11. Jun 2021: 44
+
+
+Loan Amount per month:
+
+1. Apr 2020: $4,055,253,337
+2. Jan 2021: $778,830,009
+3. Feb 2201: $772,134,929
+4. Mar 2021: $657,655,239
+5. Apr 2021: $540,897,307
+6. May 2020: $496,046,180
+7. May 2021: $320,663,756
+8. Jun 2020: $91,330,965
+9. Jul 2020: $43,820,029
+10. Aug 2020: $28,693,411
+11. Jun 2021: $6,639,889
+
+2021 seems like the real story here. April 2020 saw the most loans and loan amount, but Jan 2021 had the second most loan amount and April 2021, a year after everything first shut down, had the second most loans. In fact, there were more months in 2021 in the top 5 of both loan numbers and loan amounts than in 2020. That just shows how deep the ecomonic impact was that businesses were still seeking federal assistance more than a year after businesses were shut down while vaccines were just starting to become widely available.
 
 
 ## Geographic Analysis
@@ -527,7 +769,8 @@ Can't see chart below? Click here.
 louisiana_state_population <- get_acs(geography = "state",
               variables = "B01001_001",
               state = "LA",
-              year = 2019)
+              year = 2019,
+              geometry=TRUE)
 
 #joined with total state loans and amounts
 
@@ -552,7 +795,8 @@ acs5 <- load_variables(2019, "acs5", cache = TRUE)
 louisiana_county_population <- get_acs(geography = "county",
               variables = "B01001_001",
               state = "LA",
-              year = 2019) %>% 
+              year = 2019,
+              geometry=TRUE) %>% 
   rename(fips=GEOID,
          population=estimate,
          original_county_name=NAME) %>% 
@@ -637,16 +881,16 @@ louisiana_counties_pop_and_nloans <- total_loans_by_county %>%
 left_join(louisiana_county_population, by="project_county_name") %>% 
   mutate(county_loans_per_100k=(count_loans/population)*100000,
          county_loan_amount_per_100k=(total_loan_amount/population)*100000) %>% 
-  arrange(desc(county_loans_per_100k)) %>% 
-  head(36)
+  arrange(desc(county_loans_per_100k))
 
 louisiana_counties_pop_and_loan_amount <- total_loans_by_county %>% 
 left_join(louisiana_county_population, by="project_county_name") %>% 
   mutate(county_loans_per_100k=(count_loans/population)*100000,
          county_loan_amount_per_100k=(total_loan_amount/population)*100000) %>% 
-  arrange(desc(county_loan_amount_per_100k)) %>% 
-  head(36)
+  arrange(desc(county_loan_amount_per_100k))
 
+la_counties_with_no_loans <- total_loans_by_county %>% 
+anti_join(louisiana_county_population, by="project_county_name")
 
 
 #census data for zips
@@ -654,7 +898,8 @@ left_join(louisiana_county_population, by="project_county_name") %>%
 louisiana_zcta_population <- get_acs(geography = "zcta",
               variables = "B01001_001",
               state = "LA",
-              year = 2019) %>% 
+              year = 2019,
+              geometry=TRUE) %>% 
   rename(zip5=GEOID,
          population=estimate) %>% 
   select(zip5, population)
@@ -672,26 +917,97 @@ louisiana_zips_pop_and_loan_amount <- most_loans_by_zcta5 %>%
   mutate(zip_nloans_per_100k=(count_loans/population)*100000,
          zip_loan_amount_per_100k=(total_loan_amount/population)*100000) %>%
   arrange(desc(zip_loan_amount_per_100k))
+
 ```
 
 
 
 ```{r}
-#county map loan amount per 100k
+#maps
+
 counties <- counties() 
 
-la_counties_map <- counties %>%
+#state wide population by county
+
+la_state_county_population_map <- counties %>%
   filter(STATEFP == "22") %>% 
   ggplot() + 
-  geom_sf(data=louisiana_counties_pop_and_loan_amount, aes(fill=county_loan_amount_per_100k, geometry=fips)) + 
+  geom_sf(data=louisiana_county_population, aes(fill=population, geometry=geometry)) + 
+  theme_minimal() +
+  scale_fill_viridis_b(option="magma",trans = "log")
+
+la_state_county_population_map
+
+#county map loan amount per 100k
+
+la_amount_by_county_map <- counties %>%
+  filter(STATEFP == "22") %>% 
+  ggplot() + 
+  geom_sf(data=louisiana_counties_pop_and_loan_amount, aes(fill=county_loan_amount_per_100k, geometry=geometry)) + 
+  theme_minimal() +
+  scale_fill_viridis_b(option="magma",trans = "log")
+
+la_amount_by_county_map
+
+la_nloan_by_county_map <- counties %>%
+  filter(STATEFP == "22") %>% 
+  ggplot() + 
+  geom_sf(data=louisiana_counties_pop_and_nloans, aes(fill=county_loans_per_100k, geometry=geometry)) + 
   theme_minimal() +
   scale_fill_viridis_b(option="magma",trans = "log") 
 
-la_counties_map
+la_nloan_by_county_map
+
+#This PPP Loan Dataset is missing counties! 
+
+#by zip
+
+louisiana_zcta_population <- get_acs(geography = "zcta",
+              variables = "B01001_001",
+              state = "LA",
+              year = 2019,
+              geometry=TRUE) %>% 
+  rename(zip5=GEOID,
+         population=estimate) %>% 
+  select(zip5, population)
+
+#!!!! THIS PULL DOESNT HAVE POP DATA FOR 2 ZIP CODES IN ORLEANS PARISH! MAJOR DATA LOSS
+
+louisiana_zips_pop_and_nloans <- most_loans_by_zcta5 %>% 
+  left_join(louisiana_zcta_population , by="zip5") %>% 
+  mutate(zip_nloans_per_100k=(count_loans/population)*100000,
+         zip_loan_amount_per_100k=(total_loan_amount/population)*100000) %>%
+  arrange(desc(zip_nloans_per_100k))
+
+louisiana_zips_pop_and_loan_amount <- most_loans_by_zcta5 %>% 
+  left_join(louisiana_zcta_population , by="zip5") %>% 
+  mutate(zip_nloans_per_100k=(count_loans/population)*100000,
+         zip_loan_amount_per_100k=(total_loan_amount/population)*100000) %>%
+  arrange(desc(zip_loan_amount_per_100k))
+
+la_amount_by_zip_map <- counties %>%
+  filter(STATEFP == "22") %>% 
+  ggplot() + 
+  geom_sf(data=louisiana_zips_pop_and_loan_amount, aes(fill=zip_loan_amount_per_100k, geometry=geometry)) + 
+  theme_minimal() +
+  scale_fill_viridis_b(option="magma",trans = "log")
+
+la_amount_by_zip_map
+
+la_nloans_by_zip_map <- counties %>%
+  filter(STATEFP == "22") %>% 
+  ggplot() + 
+  geom_sf(data=louisiana_zips_pop_and_nloans, aes(fill=zip_nloans_per_100k, geometry=geometry)) + 
+  theme_minimal() +
+  scale_fill_viridis_b(option="magma",trans = "log")
+
+la_nloans_by_zip_map
+
 ```
 
+**A2.**  First of all, there seems to be data missing from this PPP dataset. There doesn't appear to be any loans in the upper half of the state, either by zipcode or by county. There are 64 parishes/counties in LA, there are only loans listed from 36 county/parish names. When I anti_joined the census list with the list of number of loans per county, there were 3 counties that were not in Louisiana and therefore bad data. It is my assumption that the dataset is missing the top half of the state, not that an entire half of the state didn't receive a single loan. Even though the state-wide population map of each county shows that the upper part of LA is generally less populated, it does show that we're missing some key areas, including Caddo Parish, which is a similar population to to St. Tammany, Jefferson and Orleans Parishes in the southern half, and Bossier, Ouachita and Rapides Parishes, which are similar population sizes to Livingston, Ascension and Tangipahoa.
 
-#Findings:
+Findings that we DO have:
 
 State Totals:
 2903.4 loans per 100k, $167,053,180.7 in loans per 100k.
@@ -723,8 +1039,6 @@ Top 5 loan amounts per 100k per county:
 
 --> *As the most populated county/parish, East Baton Rouge Parish isn't in the top 5 for loans received or amount received per 100k. Same with the other 4 in the top 5 most populated counties other than Orleans. Interestingly though, Lafayette, the #6 most populated parish, is #6 for most number of loans received per 100k.*
 
---> 
-
 Top 5 number of loans per 100k per zip code*:
 1. 70112 - 30,870.62 - New Orleans, Orleans Parish
 2. 70340 - 23,809.52 - Amelia, St Mary Parish
@@ -745,12 +1059,11 @@ Top 5 loan amounts per 100k per zip code*:
 
 
 
-
-**A2.** 
-
 ## Lender Analysis
 
 **Q3.** Write R code to examine which lenders had the most approved applications in your state (and include summary statistics such as total amount and average loan amount). Generate dataframes that show the number and total amount of all loans and undisbursed loans per lender. For those lenders who had any undisbursed loans, make a graphic showing the relationship between the total amount of loans and the total undisbursed amount. Describe the most noticeable outlier lenders on that graphic below.
+
+From Derek's email: If there are no undisbursed loans, make graphic showing the relationship between lenders and loan amounts showing how many loans each lender issued for each amount in the dataframe. Describe the most noticeable outlier lenders on that graphic.
 
 ```{r}
 top_lenders_most_loans <- louisiana_ppp %>% 
@@ -769,15 +1082,72 @@ top_lenders_most_loan_amount <- louisiana_ppp %>%
   ) %>%
   arrange(desc(total_loan_amount))
 
+top_lenders_grouped_by_amount <- top_lenders_most_loan_amount %>% 
+  mutate(
+  loan_amount_category = case_when(
+    total_loan_amount < 500 ~ 'under_500',
+    total_loan_amount >= 500 & total_loan_amount < 1000 ~ '500_1k',
+    total_loan_amount >= 1000 & total_loan_amount < 5000 ~ '1k_5K',
+    total_loan_amount >= 5000 & total_loan_amount < 10000 ~ '5k_10k',
+    total_loan_amount >= 10000 & total_loan_amount < 50000 ~ '10k_50k',
+    total_loan_amount >= 50000 & total_loan_amount < 100000 ~ '50k_100k',
+    total_loan_amount >= 100000 & total_loan_amount < 500000 ~ '100k_500k',
+    total_loan_amount >= 500000 & total_loan_amount < 1000000 ~ '500k_1m',
+    total_loan_amount >= 1000000 & total_loan_amount < 5000000 ~ '1m_5m',
+    total_loan_amount >= 5000000 & total_loan_amount < 10000000 ~ '5m_10m',
+    total_loan_amount >= 10000000 & total_loan_amount < 50000000 ~ '10m_50m',
+    total_loan_amount >= 50000000 & total_loan_amount < 100000000 ~ '50m_100m',
+    total_loan_amount >= 100000000 & total_loan_amount < 500000000 ~ '100m_500m',
+    total_loan_amount >= 500000000 & total_loan_amount < 1000000000 ~ '500m_1b',
+    total_loan_amount >= 1000000000 & total_loan_amount < 5000000000 ~ '1b_and_above',
+  )) %>% 
+  group_by(loan_amount_category) %>% 
+  summarise(
+    count_lenders=n())
+
 hancock <- louisiana_ppp %>% 
   filter(lender=="Hancock Whitney Bank") %>% 
   group_by(naics_code_description) %>% 
   summarise(total_loan_amount=sum(amount)) %>%
   arrange(desc(total_loan_amount))
+
+top_lenders_highest_average_amount <- louisiana_ppp %>% 
+  group_by(lender) %>% 
+  summarise(
+    avgamount = mean(amount)
+  ) %>%
+  arrange(desc(avgamount))
+
+enterprise_bt <- louisiana_ppp %>% 
+  filter(lender=="Enterprise Bank & Trust") %>% 
+  group_by(naics_code_description) %>% 
+  summarise(total_loan_amount=sum(amount),
+            count_loans=n()) %>%
+  arrange(desc(total_loan_amount))
+
+
+#lender graph
+top_lenders_grouped_by_amount_graph <- top_lenders_grouped_by_amount %>% 
+  ggplot() +
+  geom_bar(aes(x=reorder(loan_amount_category,count_lenders), weight=count_lenders)) +
+  coord_flip() + 
+  theme_economist() +
+  labs(
+    title="Number of Lenders In Each Dispersment Amount Range",
+    x = "Range of Total Amount Dispersed by Lender\n",
+    y = "\nTotal Number of Lenders In Each Amount Range",
+    caption = "source: SBA PPP loan database"
+  )
+
+top_lenders_grouped_by_amount_graph
+
 ```
 
 **A3.** 
-Lenders with the most loans issued:
+
+There is only *1* undispersed loan in this entire dataset. It is going to EDUARDO GALINDO, a self-employed individual in a Barber Shop business of 1 (jobs retained) in Donaldsonville for $9,791. 
+
+Lenders with the most number of loans issued:
 1. Prestamos CDFI, LLC - 13,234
 2. Hancock Whitney Bank - 10,453
 3. Capital Plus Financial, LLC - 10,396
@@ -789,7 +1159,7 @@ Lenders with the most loans issued:
 9. Home Bank, National Association - 4,013
 10. BSD Capital, LLC dba Lendistry - 3,349
 
-Lenders with the most loan amount totaled issued:
+Lenders with the most loan amount total issued:
 1. Hancock Whitney Bank - $1,604,344,806
 2. First Horizon Bank - $606,935,853
 3. JPMorgan Chase Bank, National Association - $597,232,418
@@ -803,16 +1173,247 @@ Lenders with the most loan amount totaled issued:
 
 Hancock Whitney Bank, the leading lender of total loan amount, gave the most money to Full-Service Restaurants with $135 million, followed second by Support Activities for Oil and Gas Operations with $119 million, then Offices and Lawyers with $78 million, Elementary and Secondary Schools fourth with $45 million, and Offices of Physicians (except Mental Health Specialists) rounding out the top 5 with $41 million. This basically follows the trend of which industries got the most PPP dollars statewide so that makes sense coming from the top lender of dollar amount.
 
+Top lenders with the highest average amount:
+1. Enterprise Bank & Trust - $6,694,100.00
+2. Byline Bank - $2,432,776.88
+3. CoBank ACB - $2,381,325.06
+4. International Bank of Commerce - $2,321,900.00
+5. Southside Bank - $2,127,343.58
+6. Citizens National Bank - $1,963,045.00
+7. BMO Harris Bank National Association - $1,929,342.50
+8. Washington Trust Bank - $1,865,500.00
+9. BOKF, National Association - $1,842,758.50
+10. Gulf Capital Bank - $1,797,887.15
+
+Somewhat surprisingly, Enterprise Bank & Trust had the highest loan average in the state but only sent out one hefty loan of $6,694,100.00. It went to ROTOLO CONSULTANTS INC in Slidell. According to the naics code, it is a "All Other Specialty Trade Contractors" organization, a landscape, maintenance and construction group that looks like they do huge corporate projects in Louisiana.
+
+When total lender loan amounts were grouped and graphed, most lenders were in the $100k-500k amount dispersed range with 122 lenders in that bracket. $10k-50k total dispersed was the bracket with the second most lenders with 107, and the $1m-5m bracket had the third most lenders with 93. Then, there's a major drop off before the next most frequent bracket, with 48 lenders in the 4th most frequent bracket of $50k-100k. At the low end of the ranking, there were 2 lenders who dispersed lofty amounts between $500-1billion, and the graph has 1 lender each by the bookend brackets: 1 lender who dispersed under $500, and 1 lender who dispersed above $1 billion.
 
 ## Industry Analysis
 
 **Q4.** Write R code that examines industry patterns for PPP loans in your state, using the NAICS codes from the PPP data as a starting point. Generate statewide and county industry totals, then join that with 2018-19 data from the [Census County Business Patterns survey](https://www2.census.gov/programs-surveys/cbp/datasets/2019/cbp19co.zip) using 6-digit NAICS codes. The documentation explaining that data can be found here: https://www2.census.gov/programs-surveys/cbp/technical-documentation/records-layouts/2018_record_layouts/county-layout-2018.txt. To do this, you will need to add FIPS codes to your PPP dataset.
 
+Email clarification: For question 4 you want to compare those top 10 industries from the PPP data to the top 10 industries from the CBP data in terms of number of establishments. How are they different?
+
+--> Pick a top ten industry, look at its breakdown by county. Compare number of loans in a certain county vs the amount of jobs that appear in the CBP data.
+
+The CBP data and the comparison don’t require population data from the Census API. You just need to compare number of loans to number of businesses at the county-level for one of the top 10 industries. So you will need to join the county-level PPP data with county-level CBP data for that specific industry.
+
 Does the distribution of PPP applications by the top 10 industries (by number of applications) roughly match the number of businesses reported in the Census data? Does it roughly match if you remove self-employed individuals and sole proprietorships from the PPP totals? Write up a summary of what you've found and whether there are potentially newsworthy patterns in the data.
 
 Create a county-level map showing the differences between the PPP applications and the Census business data for one of the top 10 industry codes. You can do this either using ggplot or Datawrapper (if the latter, publish that map and include the URL below).
 
+```{r}
+#IMPORTANT FINDING
+
+total_loans_by_industry <- louisiana_ppp %>% 
+  group_by(naics_code_description) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(count_loans))
+
+#Total loans by industry PPP
+#1. Beauty Salons - 8528 - almost triple than the industry that received the second most loans
+#2. Full-Service Restaurants - 3133
+#3. Offices of Lawyers - 3063
+#4. All Other Personal Services - 2702
+#5. Landscaping Services - 2698
+#6. Janitorial Services - 2474
+#7. Taxi Service - 2470
+#8. Residential Remodelers - 2315
+#9. Offices of Physicians (except Mental Health Specialists) - 2243
+#10. Barber Shops - 2186
+
+
+#IMPORTANT FINDING
+
+total_loan_amount_by_industry <- louisiana_ppp %>% 
+  group_by(naics_code_description) %>% 
+  summarise(
+    count_loans = n(),
+    total_loan_amount = sum(amount)
+  ) %>%
+  arrange(desc(total_loan_amount))
+
+#Total Loan Amount by PPP data:
+#1. Full-Service Restaurants - $444,710,414
+#2. Support Activities for Oil and Gas Operations - $400,526,643
+#3. Offices of Lawyers - $258,090,946
+#4. Offices of Physicians (except Mental Health Specialists) - $207,010,461
+#5. Elementary and Secondary Schools - $166,885,748
+#6. Beauty Salons - $137,549,841
+#7. Electrical Contractors and Other Wiring Installation Contractors - $112,152,357
+#8. New Car Dealers - $108,678,864
+#9. Engineering Services - $106,710,227
+#10. Limited-Service Restaurants - $105,560,904
+```
+
+```{r}
+census_industry_data <- read_csv("data/cbp19co.csv") %>% 
+  clean_names() %>% 
+  rename(naics_code=naics) %>% 
+  filter(fipstate=="22") %>% 
+  mutate(fips = str_c(fipstate, fipscty)) %>% 
+  select(fips, fipstate, fipscty, naics_code, est)
+
+glimpse(census_industry_data)
+
+naics_codes <- naics_codes %>% 
+  mutate(naics_code = as.character(naics_code)) 
+
+census_industry_data <- census_industry_data %>% 
+  left_join(naics_codes, by="naics_code")
+
+census_industry_data_ranked <- census_industry_data %>% 
+  group_by(naics_code_description) %>% 
+  summarise(count_establishments=sum(est)) %>% 
+  arrange(desc(count_establishments))
+
+#Highest number of establishments in CBP data:
+#1. NA - 515280 --> there are various levels of bad data in this set, with fips and zips all over the place. Tons of crucial info missing.
+#2. Limited-Service Restaurants - 3569
+#3. Offices of Physicians (except Mental Health Specialists) - 3410
+#4. Offices of Lawyers - 3306
+#5. Full-Service Restaurants - 2994
+#6. Religious Organizations - 2986
+#7. Gasoline Stations with Convenience Stores - 2204
+#8. Insurance Agencies and Brokerages - 2146
+#9. Offices of Dentists - 1572
+#10. Plumbing, Heating, and Air-Conditioning Contractors - 1424
+
+
+louisiana_ppp <- louisiana_ppp %>% 
+  mutate(naics_code = as.character(naics_code))
+
+#
+
+census_full_service_restaurants <- census_industry_data %>% 
+  filter(naics_code=="722511")
+
+full_service_restaurants <- louisiana_ppp %>%
+  filter(naics_code_description=="Full-Service Restaurants")
+
+full_service_restaurants_with_cbp <- full_service_restaurants %>% 
+  left_join(census_full_service_restaurants, by="naics_code")
+#all of the full service restaurants in the ppp data, joined with cbp "pop" data
+
+full_service_restaurants_cbp_by_county <- full_service_restaurants_with_cbp %>% 
+  group_by(project_county_name) %>% 
+  summarise(count_loans=n(),
+            ) %>% 
+  arrange(desc(count_loans))
+
+full_service_restaurants_by_county_with_fips <- full_service_restaurants_cbp_by_county %>% 
+  left_join(louisiana_county_population, by="project_county_name")
+
+census_full_service_restaurants_with_geom <- census_full_service_restaurants%>%
+  left_join(louisiana_county_population, by="fips")
+
+
+#Does it roughly match if you remove self-employed individuals and sole proprietorships from the PPP totals? 
+full_service_restaurants_v2 <- louisiana_ppp %>%
+  filter(naics_code_description=="Full-Service Restaurants",
+         business_type != "Self-Employed Individuals",
+         business_type != "Sole Proprietorship"
+  )
+#now without self-employed inds and sole proprietorships
+
+full_service_restaurants_with_cbp_v2 <- full_service_restaurants_v2 %>% 
+  left_join(census_full_service_restaurants, by="naics_code")
+#now without self-employed inds and sole proprietorships
+
+full_service_restaurants_cbp_by_county_v2 <- full_service_restaurants_with_cbp_v2 %>% 
+  group_by(project_county_name) %>% 
+  summarise(count_loans=n(),
+            ) %>% 
+  arrange(desc(count_loans))
+#now without self-employed inds and sole proprietorships
+
+full_service_restaurants_by_county_with_fips_v2 <- full_service_restaurants_cbp_by_county_v2 %>% 
+  left_join(louisiana_county_population, by="project_county_name")
+#now without self-employed inds and sole proprietorships
+
+
+```
+
+```{r}
+
+#maps - first round
+
+map_fs_restaurants_cbp <- counties %>%
+  filter(STATEFP == "22") %>% 
+  ggplot() + 
+  geom_sf(data=census_full_service_restaurants_with_geom, aes(fill=est, geometry=geometry)) + 
+  theme_minimal() +
+  scale_fill_viridis_b(option="magma",trans = "log")
+
+map_fs_restaurant_loans_by_county <- counties %>%
+  filter(STATEFP == "22") %>% 
+  ggplot() + 
+  geom_sf(data=full_service_restaurants_by_county_with_fips, aes(fill=count_loans, geometry=geometry)) + 
+  theme_minimal() +
+  scale_fill_viridis_b(option="magma",trans = "log")
+
+#now without sole proprietors and self-employed indis:
+
+map_fs_restaurant_loans_by_county_v2 <- counties %>%
+  filter(STATEFP == "22") %>% 
+  ggplot() + 
+  geom_sf(data=full_service_restaurants_by_county_with_fips_v2, aes(fill=count_loans, geometry=geometry)) + 
+  theme_minimal() +
+  scale_fill_viridis_b(option="magma",trans = "log")
+
+map_fs_restaurants_cbp
+map_fs_restaurant_loans_by_county
+map_fs_restaurant_loans_by_county_v2
+
+#
+
+#maps - second round
+
+v2_full_service_restaurants_by_county_with_fips <- full_service_restaurants_by_county_with_fips %>% 
+  filter()
+
+
+```
+
+
+
+
+
 **A4.** 
+Top industries who received the most loans statewide: 
+1. Beauty Salons - 8528 - almost triple than the industry that received the second most loans
+2. Full-Service Restaurants - 3133
+3. Offices of Lawyers - 3063
+4. All Other Personal Services - 2702
+5. Landscaping Services - 2698
+6. Janitorial Services - 2474
+7. Taxi Service - 2470
+8. Residential Remodelers - 2315
+9. Offices of Physicians (except Mental Health Specialists) - 2243
+10. Barber Shops - 2186
+
+vs....
+
+Highest number of establishments in CBP data:
+1. NA - 515280 --> there are various levels of bad data in this set, with fips and zips all over the place. Tons of crucial info missing.
+2. Limited-Service Restaurants - 3569
+3. Offices of Physicians (except Mental Health Specialists) - 3410
+4. Offices of Lawyers - 3306
+5. Full-Service Restaurants - 2994
+6. Religious Organizations - 2986
+7. Gasoline Stations with Convenience Stores - 2204
+8. Insurance Agencies and Brokerages - 2146
+9. Offices of Dentists - 1572
+10. Plumbing, Heating, and Air-Conditioning Contractors - 1424
+
+Interesting that Full-Service Restaurants had the second most loan amount but are only #5 on the CBP data. 6-10 are very different from each other. Also interesting that Beauty Salons had the by far the most number of loans, but are only #6 in loan amount statewide and aren't even in the top 10 for CBP establishments. I would definitely look into this further for story ideas.
+
+I decided to look at Full Service restaurants since it appears near the top of PPP number of loans, loan amount, and CBP data. When mapping number of full service restaurant loans per county, it is almost an identical map of the number of establishments in the state. When I took out Sole Proprietorships and Self-Employed Individuals, I seemed to "lose" data for Pointe Couppe and East Feliciana Parishes, and Assumption and Saint James Parishes have moved down a color bracket meaning they have less loans. Now, it does look even more like the CBP establishment data map.
+
 
 ## Summary
 
@@ -820,7 +1421,23 @@ Create a county-level map showing the differences between the PPP applications a
 
 **A5.**
 
+Restaurants were the hardest hit industry --> appear near the top of every list, most loans, most loan amounts, jobs retained, etc. Oil and Gas, specifically "support activities for oil and gas" was consistently second on most lists. I think that speaks to the economic makeup of the state more than anything. This may be my "minimum" story, since there's probably not much there other than the reality of the service industry getting hit the hardest and the sheer number of jobs and dollars invested in the Oil and Gas industry in Louisiana.
 
+I'd definitely do a deep dive into JAMES CANTRELLE II, who got the most loans and was getting approved for them around the same time that he was running for State legislature. My biggest story or "maximum" would be looking into his campus finances. 
+
+Additional promising story ideas:
+
+COIL TUBING PARTNERS LLC --> most loan amount received, also has subsidiaries across the south to look into. I'd need to look at other state's PPP data to see if they "cleaned up" across the south in other states where they have subsidiaries.
+
+CommCare Corp --> 12th most loan amount received, listed as an unnamed non-profit with a CEO with strong lobbiest ties. I'd need to look into the CEO's history a bit more, and would need to look at why an organization that received so many federal dollars was listed without its name on all of its applications. It's likely a bigger story about the state of corporate health and elderly care in the US, along with the unrivaled power of lobbyests at the state and federal level.
+
+Elementary Schools --> Industry that received one of the highest negative change in loan approval amount. Why are loan amounts changed, and why on earth was it elementary schools of all places that got less than what they were initially approved for? Why were lawyers the top industry who received more than they were initially approved for? This is probably one of my top story ideas, if even just to get a better understanding of why loan approval amounts happen in the first place. 
+
+Beauty Salons --> by FAR the most loans by industry but doesn't appear in any other top 5 lists, like loan amounts of jobs retained. Seems like a strange disconnect.
+
+311 Decatur St --> Most loans per address, various businesses located at the same building in New Orleans yet googling the address usually brings up the same restaurant. Interesting...
+
+As the most populated county/parish, East Baton Rouge Parish isn't in the top 5 for loans received or amount received per 100k. Same with the other 4 in the top 5 most populated counties other than Orleans. Interestingly though, Lafayette, the #6 most populated parish, is #6 for most number of loans received per 100k. Why didn't the most populated counties get the most loans and amount received per 100k?
 
 
 
